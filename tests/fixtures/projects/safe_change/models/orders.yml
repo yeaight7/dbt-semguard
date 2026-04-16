@@ -1,0 +1,41 @@
+models:
+  - name: fct_orders
+    semantic_model:
+      enabled: true
+      name: orders
+    agg_time_dimension: ordered_at
+    columns:
+      - name: order_id
+        entity:
+          name: order
+          type: primary
+      - name: customer_id
+        entity:
+          name: customer
+          type: foreign
+      - name: ordered_at
+        granularity: day
+        dimension:
+          type: time
+      - name: country
+        dimension:
+          type: categorical
+    metrics:
+      - name: gross_revenue
+        description: Updated docs only.
+        label: Gross Revenue
+        type: simple
+        agg: sum
+        expr: order_total
+        filter: order_status = 'completed'
+      - name: order_count
+        type: simple
+        agg: count
+        expr: 1
+
+metrics:
+  - name: aov
+    type: ratio
+    label: Average order value
+    denominator: order_count
+    numerator: gross_revenue

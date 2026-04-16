@@ -1,0 +1,42 @@
+{
+  "semantic_models": {
+    "semantic_model.dbt_semguard.orders": {
+      "name": "orders",
+      "model_name": "fct_orders",
+      "agg_time_dimension": "ordered_at",
+      "entities": [
+        { "name": "order", "type": "primary", "expr": "order_id" },
+        { "name": "customer", "type": "foreign", "expr": "customer_id" }
+      ],
+      "dimensions": [
+        { "name": "ordered_at", "type": "time", "expr": "ordered_at", "granularity": "day" },
+        { "name": "country", "type": "categorical", "expr": "country" }
+      ]
+    }
+  },
+  "metrics": {
+    "metric.dbt_semguard.gross_revenue": {
+      "name": "gross_revenue",
+      "type": "simple",
+      "label": "Gross Revenue",
+      "agg": "sum",
+      "expr": "order_total",
+      "filter": "order_status = 'completed'",
+      "owner_model": "orders"
+    },
+    "metric.dbt_semguard.order_count": {
+      "name": "order_count",
+      "type": "simple",
+      "agg": "count",
+      "expr": "1",
+      "owner_model": "orders"
+    },
+    "metric.dbt_semguard.aov": {
+      "name": "aov",
+      "type": "ratio",
+      "label": "Average order value",
+      "numerator": "gross_revenue",
+      "denominator": "order_count"
+    }
+  }
+}

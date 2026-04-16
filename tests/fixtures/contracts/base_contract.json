@@ -1,0 +1,79 @@
+{
+  "semantic_models": {
+    "orders": {
+      "name": "orders",
+      "model_name": "fct_orders",
+      "agg_time_dimension": "ordered_at",
+      "entities": {
+        "customer": {
+          "name": "customer",
+          "expr": "customer_id",
+          "type": "foreign"
+        },
+        "order": {
+          "name": "order",
+          "expr": "order_id",
+          "type": "primary"
+        }
+      },
+      "dimensions": {
+        "country": {
+          "expr": "country",
+          "granularity": null,
+          "name": "country",
+          "type": "categorical"
+        },
+        "ordered_at": {
+          "expr": "ordered_at",
+          "granularity": "day",
+          "name": "ordered_at",
+          "type": "time"
+        }
+      }
+    }
+  },
+  "metrics": {
+    "aov": {
+      "agg": null,
+      "agg_time_dimension": null,
+      "denominator": "order_count",
+      "expr": null,
+      "filter": null,
+      "input_metrics": [],
+      "label": "Average order value",
+      "metric_type": "ratio",
+      "name": "aov",
+      "non_additive_dimension": null,
+      "numerator": "gross_revenue",
+      "owner_model": null
+    },
+    "gross_revenue": {
+      "agg": "sum",
+      "agg_time_dimension": null,
+      "denominator": null,
+      "expr": "order_total",
+      "filter": "order_status = 'completed'",
+      "input_metrics": [],
+      "label": "Gross Revenue",
+      "metric_type": "simple",
+      "name": "gross_revenue",
+      "non_additive_dimension": null,
+      "numerator": null,
+      "owner_model": "orders"
+    },
+    "order_count": {
+      "agg": "count",
+      "agg_time_dimension": null,
+      "denominator": null,
+      "expr": "1",
+      "filter": null,
+      "input_metrics": [],
+      "label": null,
+      "metric_type": "simple",
+      "name": "order_count",
+      "non_additive_dimension": null,
+      "numerator": null,
+      "owner_model": "orders"
+    }
+  }
+}
