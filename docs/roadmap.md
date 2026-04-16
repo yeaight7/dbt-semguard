@@ -2,8 +2,8 @@
 
 ## Near term
 
+- Broaden manifest parsing beyond the current explicit `semantic_models` and `metrics` artifact shape
 - Support richer MetricFlow metric types beyond the current diff coverage
-- Improve manifest parsing against real dbt artifact shapes
 - Add file and line diagnostics to change records when available
 - Add PR comment orchestration on top of the existing CLI output
 

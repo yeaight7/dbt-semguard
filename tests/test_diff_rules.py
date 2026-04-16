@@ -32,3 +32,19 @@ def test_diff_ignores_description_only_changes():
     assert report.changes == []
     assert report.highest_severity == "safe"
     assert report.blocking is False
+
+
+def test_diff_classifies_additions_filter_changes_and_label_changes():
+    base = extract_contract_from_yaml_dir(FIXTURES / "projects" / "base")
+    head = extract_contract_from_yaml_dir(FIXTURES / "projects" / "risky_change")
+
+    report = build_report(diff_contracts(base, head))
+
+    codes = {(change.code, change.severity) for change in report.changes}
+    assert ("entity.added", "risky") in codes
+    assert ("dimension.added", "risky") in codes
+    assert ("metric.added", "risky") in codes
+    assert ("metric.filter_changed", "risky") in codes
+    assert ("metric.label_changed", "risky") in codes
+    assert report.highest_severity == "risky"
+    assert report.blocking is False

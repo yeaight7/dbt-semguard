@@ -44,6 +44,44 @@ JSON reports contain:
 - `changes`
 - `metadata`
 
+## Coverage
+
+`dbt-semguard` `v0.1.0` covers the highest-value semantic changes in the latest dbt Semantic Layer spec.
+
+Covered extractors and inputs:
+
+- Latest-spec YAML projects
+- Explicit `manifest.json` input
+- Canonical contract JSON emitted by `semguard extract`
+
+Covered semantic comparisons:
+
+- Semantic model add/remove and backing model changes
+- Entity add/remove and entity type changes
+- Dimension add/remove, type changes, and time granularity changes
+- Simple metric aggregation, expression, label, and filter changes
+- Ratio metric numerator and denominator changes
+- Derived metric input metric changes
+- Additive changes such as new entities, new dimensions, and new metrics
+
+Current automated coverage:
+
+- YAML extraction for the latest spec
+- Manifest normalization
+- Semantic diff severity mapping for breaking and risky changes
+- CLI `extract`, `diff`, and `check`
+- Checkout-free git ref mode
+
+## Current Limitations
+
+Known `v0.1.0` limitations are intentionally narrow:
+
+- Manifest parsing expects an explicit artifact shape and does not yet attempt broad compatibility across real-world dbt manifest variants.
+- The tool targets the latest Semantic Layer YAML spec only; legacy metric and semantic-model syntax is not included.
+- Rename handling is intentionally conservative: a rename is treated as a removal plus an addition.
+- File and line diagnostics are not emitted yet, even when the source could be traced.
+- GitHub integration stops at workflow summary plus artifact upload; it does not manage PR comments or review threads.
+
 ## GitHub Action
 
 Use the included composite action from this repository:
@@ -79,3 +117,8 @@ An example latest-spec dbt project lives in [examples/ecommerce_dbt_project](/C:
 - [Contract spec](/C:/Users/Rivero/Documents/GitHub/dbt-semguard/docs/contract-spec.md)
 - [Severity rules](/C:/Users/Rivero/Documents/GitHub/dbt-semguard/docs/severity-rules.md)
 - [Roadmap](/C:/Users/Rivero/Documents/GitHub/dbt-semguard/docs/roadmap.md)
+- [Changelog](/C:/Users/Rivero/Documents/GitHub/dbt-semguard/CHANGELOG.md)
+
+## License
+
+This project is open source under the MIT License. See [LICENSE](/C:/Users/Rivero/Documents/GitHub/dbt-semguard/LICENSE).
