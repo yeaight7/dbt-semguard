@@ -65,15 +65,15 @@ It intentionally ignores noise such as:
 
 That means the output is focused on semantic drift, not formatting drift.
 
-## How To Explain It To A Data Team
+[//]: # (## How To Explain It To A Data Team)
 
-Short version:
+[//]: # (Short version:)
 
-> `dbt-semguard` tells you whether a PR changes the meaning of a metric, not just its code.
+[//]: # (> `dbt-semguard` tells you whether a PR changes the meaning of a metric, not just its code.)
 
-Slightly longer version:
+[//]: # (Slightly longer version:)
 
-> It compares the dbt Semantic Layer before and after a PR, strips away cosmetic YAML changes, and highlights only the changes that can affect how downstream users interpret or query a KPI.
+[//]: # (> It compares the dbt Semantic Layer before and after a PR, strips away cosmetic YAML changes, and highlights only the changes that can affect how downstream users interpret or query a KPI.)
 
 ## Install
 
