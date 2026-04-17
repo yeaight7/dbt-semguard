@@ -18,10 +18,10 @@ inputs:
     description: dbt project directory
     default: "."
   base-manifest:
-    description: Optional base manifest.json path
+    description: Optional base dbt semantic_manifest.json path
     required: false
   head-manifest:
-    description: Optional head manifest.json path
+    description: Optional head dbt semantic_manifest.json path
     required: false
   fail-on:
     description: Minimum severity that should fail the action
@@ -43,30 +43,18 @@ runs:
         python -m pip install --upgrade pip
         python -m pip install "${{ github.action_path }}"
 
-    - name: Build report args
-      id: args
+    - name: Run dbt-semguard
       shell: bash
       run: |
         if [[ -n "${{ inputs.base-manifest }}" || -n "${{ inputs.head-manifest }}" ]]; then
-          echo "diff_args=--base-manifest \"${{ inputs.base-manifest }}\" --head-manifest \"${{ inputs.head-manifest }}\"" >> "$GITHUB_OUTPUT"
+          semguard diff --base-manifest "${{ inputs.base-manifest }}" --head-manifest "${{ inputs.head-manifest }}" --format json > semguard-report.json
+          semguard diff --base-manifest "${{ inputs.base-manifest }}" --head-manifest "${{ inputs.head-manifest }}" --format markdown >> "$GITHUB_STEP_SUMMARY"
+          semguard check --base-manifest "${{ inputs.base-manifest }}" --head-manifest "${{ inputs.head-manifest }}" --fail-on "${{ inputs.fail-on }}"
         else
-          echo "diff_args=--base-ref \"${{ inputs.base-ref }}\" --head-ref \"${{ inputs.head-ref }}\" --project-dir \"${{ inputs.project-dir }}\"" >> "$GITHUB_OUTPUT"
+          semguard diff --base-ref "${{ inputs.base-ref }}" --head-ref "${{ inputs.head-ref }}" --project-dir "${{ inputs.project-dir }}" --format json > semguard-report.json
+          semguard diff --base-ref "${{ inputs.base-ref }}" --head-ref "${{ inputs.head-ref }}" --project-dir "${{ inputs.project-dir }}" --format markdown >> "$GITHUB_STEP_SUMMARY"
+          semguard check --base-ref "${{ inputs.base-ref }}" --head-ref "${{ inputs.head-ref }}" --project-dir "${{ inputs.project-dir }}" --fail-on "${{ inputs.fail-on }}"
         fi
-
-    - name: Write JSON report
-      shell: bash
-      run: |
-        eval "semguard diff ${{ steps.args.outputs.diff_args }} --format json" > semguard-report.json
-
-    - name: Write workflow summary
-      shell: bash
-      run: |
-        eval "semguard diff ${{ steps.args.outputs.diff_args }} --format markdown" >> "$GITHUB_STEP_SUMMARY"
-
-    - name: Enforce severity threshold
-      shell: bash
-      run: |
-        eval "semguard check ${{ steps.args.outputs.diff_args }} --fail-on ${{ inputs.fail-on }}"
 
     - uses: actions/upload-artifact@v4
       with:

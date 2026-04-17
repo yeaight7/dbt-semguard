@@ -1,0 +1,110 @@
+{
+  "semantic_models": [
+    {
+      "name": "orders",
+      "defaults": {
+        "agg_time_dimension": "ordered_at"
+      },
+      "node_relation": {
+        "alias": "fct_orders",
+        "relation_name": "\"analytics\".\"mart\".\"fct_orders\""
+      },
+      "entities": [
+        {
+          "name": "order",
+          "type": "primary",
+          "expr": "order_id"
+        },
+        {
+          "name": "customer",
+          "type": "foreign",
+          "expr": "customer_id"
+        }
+      ],
+      "dimensions": [
+        {
+          "name": "ordered_at",
+          "type": "time",
+          "expr": "ordered_at",
+          "type_params": {
+            "time_granularity": "day"
+          }
+        },
+        {
+          "name": "country",
+          "type": "categorical",
+          "expr": "country"
+        }
+      ],
+      "measures": [
+        {
+          "name": "gross_revenue",
+          "agg": "sum",
+          "expr": "order_total",
+          "agg_time_dimension": "ordered_at",
+          "label": "Gross Revenue"
+        },
+        {
+          "name": "order_count",
+          "agg": "count",
+          "expr": "1",
+          "agg_time_dimension": "ordered_at"
+        }
+      ]
+    }
+  ],
+  "metrics": [
+    {
+      "name": "gross_revenue",
+      "type": "simple",
+      "label": "Gross Revenue",
+      "filter": {
+        "where_sql_template": "order_status = 'completed'"
+      },
+      "type_params": {
+        "measure": {
+          "name": "gross_revenue"
+        },
+        "metric_aggregation_params": {
+          "semantic_model": "orders",
+          "agg": "sum",
+          "agg_time_dimension": "ordered_at",
+          "non_additive_dimension": null
+        }
+      }
+    },
+    {
+      "name": "order_count",
+      "type": "simple",
+      "type_params": {
+        "measure": {
+          "name": "order_count"
+        },
+        "metric_aggregation_params": {
+          "semantic_model": "orders",
+          "agg": "count",
+          "agg_time_dimension": "ordered_at",
+          "non_additive_dimension": null
+        }
+      }
+    },
+    {
+      "name": "aov",
+      "type": "ratio",
+      "label": "Average order value",
+      "type_params": {
+        "numerator": {
+          "name": "gross_revenue"
+        },
+        "denominator": {
+          "name": "order_count"
+        }
+      }
+    }
+  ],
+  "project_configuration": {
+    "time_spines": [],
+    "time_spine_table_configurations": []
+  },
+  "saved_queries": []
+}

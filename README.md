@@ -107,10 +107,10 @@ semguard diff --base-contract base-contract.json --head-contract head-contract.j
 
 ### Compare manifests explicitly
 
-Use this when your workflow already has manifest artifacts available:
+Use this when your workflow already has dbt `semantic_manifest.json` artifacts available:
 
 ```bash
-semguard diff --base-manifest base-manifest.json --head-manifest head-manifest.json --format json
+semguard diff --base-manifest base-semantic-manifest.json --head-manifest head-semantic-manifest.json --format json
 ```
 
 ### Extract a contract
@@ -119,7 +119,7 @@ Use this when you want a stable machine-readable snapshot of semantic meaning:
 
 ```bash
 semguard extract --source yaml --project-dir examples/ecommerce_dbt_project --output base-contract.json
-semguard extract --source manifest --manifest manifest.json --output manifest-contract.json
+semguard extract --source manifest --manifest semantic_manifest.json --output manifest-contract.json
 ```
 
 ## Example Review Flow
@@ -159,17 +159,18 @@ JSON reports contain:
 Covered extractors and inputs:
 
 - Latest-spec YAML projects
-- Explicit `manifest.json` input
+- Explicit dbt `semantic_manifest.json` input
 - Canonical contract JSON emitted by `semguard extract`
 
 Covered semantic comparisons:
 
 - Semantic model add/remove and backing model changes
+- Semantic model default aggregation time dimension changes
 - Entity add/remove and entity type changes
 - Dimension add/remove, type changes, and time granularity changes
-- Simple metric aggregation, expression, label, and filter changes
+- Simple metric aggregation, expression, label, filter, ownership, aggregation-time, and non-additive changes
 - Ratio metric numerator and denominator changes
-- Derived metric input metric changes
+- Derived metric expression and input metric changes
 - Additive changes such as new entities, new dimensions, and new metrics
 
 Current automated coverage:
@@ -184,7 +185,7 @@ Current automated coverage:
 
 Known `v0.1.1` limitations are intentionally narrow:
 
-- Manifest parsing expects an explicit artifact shape and does not yet attempt broad compatibility across real-world dbt manifest variants.
+- Manifest parsing expects dbt `semantic_manifest.json`, not the general-purpose dbt `manifest.json` artifact.
 - The tool targets the latest Semantic Layer YAML spec only; legacy metric and semantic-model syntax is not included.
 - Rename handling is intentionally conservative: a rename is treated as a removal plus an addition.
 - File and line diagnostics are not emitted yet, even when the source could be traced.

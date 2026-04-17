@@ -22,7 +22,7 @@ jobs:
       - name: Run tests
         run: pytest
 
-  action-smoke:
+  action-smoke-git:
     runs-on: ubuntu-latest
     needs: test
     steps:
@@ -74,6 +74,62 @@ jobs:
           echo "HEAD_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
       - uses: ./
+        with:
+          base-ref: ${{ env.BASE_SHA }}
+          head-ref: ${{ env.HEAD_SHA }}
+          fail-on: breaking
+
+  action-smoke-manifest:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create semantic manifest fixtures with hostile paths
+        run: |
+          mkdir -p "tmp artifacts/base manifest" "tmp artifacts/head manifest"
+          cp tests/fixtures/manifest/base_semantic_manifest.json "tmp artifacts/base manifest/semantic_manifest.json"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          base_path = Path("tests/fixtures/manifest/base_semantic_manifest.json")
+          head_path = Path("tmp artifacts/head manifest/semantic_manifest.json")
+          payload = json.loads(base_path.read_text(encoding="utf-8"))
+          payload["metrics"][0]["filter"] = {"where_sql_template": "order_status in ('completed', 'refunded')"}
+          head_path.write_text(json.dumps(payload), encoding="utf-8")
+          PY
+
+      - uses: ./
+        with:
+          base-manifest: tmp artifacts/base manifest/semantic_manifest.json
+          head-manifest: tmp artifacts/head manifest/semantic_manifest.json
+          fail-on: breaking
+
+  published-action-smoke:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Seed published-consumer refs
+        run: |
+          git config user.email "ci@example.com"
+          git config user.name "CI"
+          mkdir -p models
+          cp tests/fixtures/projects/base/models/orders.yml models/orders.yml
+          git add models/orders.yml
+          git commit -m "base semantic model"
+          echo "BASE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          cp tests/fixtures/projects/breaking_change/models/orders.yml models/orders.yml
+          git add models/orders.yml
+          git commit -m "head semantic model"
+          echo "HEAD_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - uses: yeaight7/dbt-semguard@v0.1.1
         with:
           base-ref: ${{ env.BASE_SHA }}
           head-ref: ${{ env.HEAD_SHA }}

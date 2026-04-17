@@ -50,6 +50,8 @@
 - Entities and entity types
 - Dimensions, dimension types, expressions, and granularity
 - Metric type and type-specific parameters
+- Metric-level `agg_time_dimension`
+- Metric non-additive dimension configuration
 - Metric filters
 - Metric label
 - Metric ownership for model-local simple metrics
@@ -67,7 +69,7 @@
 ## Supported inputs in v0.1
 
 - Latest dbt Semantic Layer YAML spec
-- Explicit `manifest.json` input
+- Explicit dbt `semantic_manifest.json` input
 - Canonical contract JSON emitted by `semguard extract`
 
 ## Notes

@@ -35,16 +35,64 @@ def test_yaml_extractor_ignores_cosmetic_metadata():
     assert safe == base
 
 
-def test_manifest_extractor_matches_contract_fixture():
-    manifest_contract = extract_contract_from_manifest(FIXTURES / "manifest" / "base_manifest.json")
+def test_manifest_extractor_matches_semantic_manifest_fixture():
+    manifest_contract = extract_contract_from_manifest(FIXTURES / "manifest" / "base_semantic_manifest.json")
     expected = json.loads((FIXTURES / "contracts" / "base_contract.json").read_text())
 
     assert manifest_contract.model_dump(mode="json") == expected
 
 
-def test_manifest_extractor_rejects_missing_sections(tmp_path: Path):
+def test_manifest_extractor_rejects_plain_dbt_manifest_artifact(tmp_path: Path):
     manifest_path = tmp_path / "manifest.json"
-    manifest_path.write_text(json.dumps({"metrics": {}}))
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "metadata": {"dbt_schema_version": "https://schemas.getdbt.com/dbt/manifest/v12.json"},
+                "nodes": {},
+                "metrics": {},
+            }
+        ),
+        encoding="utf-8",
+    )
 
-    with pytest.raises(ValueError, match="semantic_models"):
+    with pytest.raises(ValueError, match="semantic_manifest.json"):
+        extract_contract_from_manifest(manifest_path)
+
+
+def test_manifest_extractor_rejects_unresolvable_simple_metric_measure(tmp_path: Path):
+    manifest_path = tmp_path / "semantic_manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "semantic_models": [
+                    {
+                        "name": "orders",
+                        "defaults": {"agg_time_dimension": "ordered_at"},
+                        "node_relation": {"alias": "fct_orders"},
+                        "entities": [],
+                        "dimensions": [],
+                        "measures": [],
+                    }
+                ],
+                "metrics": [
+                    {
+                        "name": "gross_revenue",
+                        "type": "simple",
+                        "type_params": {
+                            "measure": {"name": "gross_revenue"},
+                            "metric_aggregation_params": {
+                                "semantic_model": "orders",
+                                "agg": "sum",
+                                "agg_time_dimension": "ordered_at",
+                            },
+                        },
+                    }
+                ],
+                "project_configuration": {"time_spines": [], "time_spine_table_configurations": []},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="gross_revenue"):
         extract_contract_from_manifest(manifest_path)
