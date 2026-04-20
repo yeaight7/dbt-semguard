@@ -5,6 +5,7 @@
 ### Added
 
 - Added breaking change detection for entity expression changes and dimension expression changes
+- Added end-to-end support for cumulative metrics and conversion metrics in YAML and `semantic_manifest.json` extraction
 - Added a field-coverage policy for the semantic contract so diffed, nested, and intentionally excluded fields are auditable in tests
 - Added CI smoke coverage for the published action in manifest mode with hostile spaced paths
 

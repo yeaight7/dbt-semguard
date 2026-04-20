@@ -263,6 +263,143 @@ def test_field_diff_policy_accounts_for_all_supported_contract_fields():
                     assert code in SEVERITY_BY_CODE
 
 
+def test_diff_detects_cumulative_metric_semantic_changes():
+    base = SemanticContract(
+        metrics={
+            "revenue_mtd": MetricContract(
+                name="revenue_mtd",
+                type="cumulative",
+                input_metric="revenue_daily",
+                window="30d",
+                grain_to_date="month",
+                period_agg="sum",
+            )
+        }
+    )
+    head = SemanticContract(
+        metrics={
+            "revenue_mtd": MetricContract(
+                name="revenue_mtd",
+                type="cumulative",
+                input_metric="revenue_weekly",
+                window="60d",
+                grain_to_date="quarter",
+                period_agg="avg",
+            )
+        }
+    )
+
+    report = build_report(diff_contracts(base, head))
+    codes = {(change.code, change.severity) for change in report.changes}
+
+    assert ("metric.cumulative.input_metric_changed", "breaking") in codes
+    assert ("metric.cumulative.window_changed", "risky") in codes
+    assert ("metric.cumulative.grain_to_date_changed", "risky") in codes
+    assert ("metric.cumulative.period_agg_changed", "breaking") in codes
+
+
+def test_diff_detects_conversion_metric_semantic_changes():
+    base = SemanticContract(
+        metrics={
+            "signup_conversion": MetricContract(
+                name="signup_conversion",
+                type="conversion",
+                entity="user",
+                calculation="conversion_rate",
+                base_metric="signups",
+                conversion_metric="paid_signups",
+                constant_properties='[{"base_property": "plan", "conversion_property": "plan"}]',
+            )
+        }
+    )
+    head = SemanticContract(
+        metrics={
+            "signup_conversion": MetricContract(
+                name="signup_conversion",
+                type="conversion",
+                entity="account",
+                calculation="conversions",
+                base_metric="registrations",
+                conversion_metric="activated_users",
+                constant_properties='[{"base_property": "region", "conversion_property": "region"}]',
+            )
+        }
+    )
+
+    report = build_report(diff_contracts(base, head))
+    codes = {(change.code, change.severity) for change in report.changes}
+
+    assert ("metric.conversion.entity_changed", "breaking") in codes
+    assert ("metric.conversion.calculation_changed", "breaking") in codes
+    assert ("metric.conversion.base_metric_changed", "breaking") in codes
+    assert ("metric.conversion.conversion_metric_changed", "breaking") in codes
+    assert ("metric.conversion.constant_properties_changed", "risky") in codes
+
+
+def test_yaml_and_manifest_equivalent_cumulative_changes_produce_same_findings(tmp_path: Path):
+    base_yaml_dir = tmp_path / "yaml_cumulative_base"
+    head_yaml_dir = tmp_path / "yaml_cumulative_head"
+    for project_dir in (base_yaml_dir, head_yaml_dir):
+        (project_dir / "models").mkdir(parents=True)
+
+    (base_yaml_dir / "models" / "orders.yml").write_text(_advanced_metric_project_yaml(window="30d"), encoding="utf-8")
+    (head_yaml_dir / "models" / "orders.yml").write_text(_advanced_metric_project_yaml(window="60d"), encoding="utf-8")
+
+    base_manifest_path = tmp_path / "cumulative_base_semantic_manifest.json"
+    head_manifest_path = tmp_path / "cumulative_head_semantic_manifest.json"
+    base_manifest_path.write_text(json.dumps(_advanced_metric_manifest(window="30d")), encoding="utf-8")
+    head_manifest_path.write_text(json.dumps(_advanced_metric_manifest(window="60d")), encoding="utf-8")
+
+    yaml_changes = diff_contracts(
+        extract_contract_from_yaml_dir(base_yaml_dir),
+        extract_contract_from_yaml_dir(head_yaml_dir),
+    )
+    manifest_changes = diff_contracts(
+        extract_contract_from_manifest(base_manifest_path),
+        extract_contract_from_manifest(head_manifest_path),
+    )
+
+    assert _normalized_changes(yaml_changes) == _normalized_changes(manifest_changes)
+
+
+def test_yaml_and_manifest_equivalent_conversion_changes_produce_same_findings(tmp_path: Path):
+    base_yaml_dir = tmp_path / "yaml_conversion_base"
+    head_yaml_dir = tmp_path / "yaml_conversion_head"
+    for project_dir in (base_yaml_dir, head_yaml_dir):
+        (project_dir / "models").mkdir(parents=True)
+
+    (base_yaml_dir / "models" / "orders.yml").write_text(
+        _advanced_metric_project_yaml(base_metric="signups", conversion_metric="paid_signups"),
+        encoding="utf-8",
+    )
+    (head_yaml_dir / "models" / "orders.yml").write_text(
+        _advanced_metric_project_yaml(base_metric="registrations", conversion_metric="activated_users"),
+        encoding="utf-8",
+    )
+
+    base_manifest_path = tmp_path / "conversion_base_semantic_manifest.json"
+    head_manifest_path = tmp_path / "conversion_head_semantic_manifest.json"
+    base_manifest_path.write_text(
+        json.dumps(_advanced_metric_manifest(base_metric="signups", conversion_metric="paid_signups")),
+        encoding="utf-8",
+    )
+    head_manifest_path.write_text(
+        json.dumps(_advanced_metric_manifest(base_metric="registrations", conversion_metric="activated_users")),
+        encoding="utf-8",
+    )
+
+    yaml_changes = diff_contracts(
+        extract_contract_from_yaml_dir(base_yaml_dir),
+        extract_contract_from_yaml_dir(head_yaml_dir),
+    )
+    manifest_changes = diff_contracts(
+        extract_contract_from_manifest(base_manifest_path),
+        extract_contract_from_manifest(head_manifest_path),
+    )
+
+    assert _normalized_changes(yaml_changes) == _normalized_changes(manifest_changes)
+
+
 def _normalized_changes(changes):
     return sorted((change.code, change.severity, change.path, change.before, change.after) for change in changes)
 
@@ -313,6 +450,122 @@ def _semantic_expr_manifest(*, customer_expr: str, country_expr: str) -> dict:
                     "metric_aggregation_params": {"semantic_model": "orders", "agg": "sum"},
                 },
             }
+        ],
+        "project_configuration": {"time_spines": [], "time_spine_table_configurations": []},
+    }
+
+
+def _advanced_metric_project_yaml(*, window: str = "30d", base_metric: str = "signups", conversion_metric: str = "paid_signups") -> str:
+    return f"""models:
+  - name: fct_orders
+    semantic_model:
+      enabled: true
+      name: orders
+    agg_time_dimension: ordered_at
+    columns:
+      - name: ordered_at
+        granularity: day
+        dimension:
+          type: time
+      - name: user_id
+        entity:
+          type: primary
+          name: user
+    metrics:
+      - name: revenue_daily
+        type: simple
+        agg: sum
+        expr: order_total
+      - name: signups
+        type: simple
+        agg: count
+        expr: 1
+      - name: paid_signups
+        type: simple
+        agg: count
+        expr: 1
+
+metrics:
+  - name: revenue_mtd
+    type: cumulative
+    input_metric: revenue_daily
+    window: {window}
+    grain_to_date: month
+    period_agg: sum
+  - name: signup_conversion
+    type: conversion
+    entity: user
+    calculation: conversion_rate
+    base_metric: {base_metric}
+    conversion_metric: {conversion_metric}
+    constant_properties:
+      - base_property: plan
+        conversion_property: plan
+"""
+
+
+def _advanced_metric_manifest(*, window: str = "30d", base_metric: str = "signups", conversion_metric: str = "paid_signups") -> dict:
+    return {
+        "semantic_models": [
+            {
+                "name": "orders",
+                "defaults": {"agg_time_dimension": "ordered_at"},
+                "node_relation": {"alias": "fct_orders"},
+                "entities": [{"name": "user", "type": "primary", "expr": "user_id"}],
+                "dimensions": [{"name": "ordered_at", "type": "time", "expr": "ordered_at", "type_params": {"time_granularity": "day"}}],
+                "measures": [
+                    {"name": "revenue_daily", "agg": "sum", "expr": "order_total"},
+                    {"name": "signups", "agg": "count", "expr": "1"},
+                    {"name": "paid_signups", "agg": "count", "expr": "1"},
+                ],
+            }
+        ],
+        "metrics": [
+            {
+                "name": "revenue_daily",
+                "type": "simple",
+                "type_params": {
+                    "measure": {"name": "revenue_daily"},
+                    "metric_aggregation_params": {"semantic_model": "orders", "agg": "sum"},
+                },
+            },
+            {
+                "name": "signups",
+                "type": "simple",
+                "type_params": {
+                    "measure": {"name": "signups"},
+                    "metric_aggregation_params": {"semantic_model": "orders", "agg": "count"},
+                },
+            },
+            {
+                "name": "paid_signups",
+                "type": "simple",
+                "type_params": {
+                    "measure": {"name": "paid_signups"},
+                    "metric_aggregation_params": {"semantic_model": "orders", "agg": "count"},
+                },
+            },
+            {
+                "name": "revenue_mtd",
+                "type": "cumulative",
+                "type_params": {
+                    "measure": {"name": "revenue_daily"},
+                    "cumulative_type_params": {"window": window, "grain_to_date": "month", "period_agg": "sum"},
+                },
+            },
+            {
+                "name": "signup_conversion",
+                "type": "conversion",
+                "type_params": {
+                    "conversion_type_params": {
+                        "entity": "user",
+                        "calculation": "conversion_rate",
+                        "base_measure": base_metric,
+                        "conversion_measure": conversion_metric,
+                        "constant_properties": [{"base_property": "plan", "conversion_property": "plan"}],
+                    }
+                },
+            },
         ],
         "project_configuration": {"time_spines": [], "time_spine_table_configurations": []},
     }

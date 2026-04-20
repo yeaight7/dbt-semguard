@@ -24,6 +24,12 @@ These fail `semguard check` by default.
 - `metric.ratio.denominator_changed`
 - `metric.derived.inputs_changed`
 - `metric.derived.expr_changed`
+- `metric.cumulative.input_metric_changed`
+- `metric.cumulative.period_agg_changed`
+- `metric.conversion.entity_changed`
+- `metric.conversion.calculation_changed`
+- `metric.conversion.base_metric_changed`
+- `metric.conversion.conversion_metric_changed`
 
 ## Risky
 
@@ -38,6 +44,9 @@ These warn by default and become blocking only if `--fail-on risky` or `--fail-o
 - `metric.filter_changed`
 - `metric.label_changed`
 - `metric.agg_time_dimension_changed`
+- `metric.cumulative.window_changed`
+- `metric.cumulative.grain_to_date_changed`
+- `metric.conversion.constant_properties_changed`
 
 ## Safe
 

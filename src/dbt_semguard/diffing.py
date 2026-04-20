@@ -41,6 +41,15 @@ SEVERITY_BY_CODE = {
     "metric.ratio.denominator_changed": "breaking",
     "metric.derived.inputs_changed": "breaking",
     "metric.derived.expr_changed": "breaking",
+    "metric.cumulative.input_metric_changed": "breaking",
+    "metric.cumulative.window_changed": "risky",
+    "metric.cumulative.grain_to_date_changed": "risky",
+    "metric.cumulative.period_agg_changed": "breaking",
+    "metric.conversion.entity_changed": "breaking",
+    "metric.conversion.calculation_changed": "breaking",
+    "metric.conversion.base_metric_changed": "breaking",
+    "metric.conversion.conversion_metric_changed": "breaking",
+    "metric.conversion.constant_properties_changed": "risky",
 }
 
 SEMANTIC_MODEL_COMPARATORS = (
@@ -79,6 +88,19 @@ METRIC_TYPE_COMPARATORS = {
     "derived": (
         FieldComparator("expr", "metric.derived.expr_changed"),
         FieldComparator("input_metrics", "metric.derived.inputs_changed"),
+    ),
+    "cumulative": (
+        FieldComparator("input_metric", "metric.cumulative.input_metric_changed"),
+        FieldComparator("window", "metric.cumulative.window_changed"),
+        FieldComparator("grain_to_date", "metric.cumulative.grain_to_date_changed"),
+        FieldComparator("period_agg", "metric.cumulative.period_agg_changed"),
+    ),
+    "conversion": (
+        FieldComparator("entity", "metric.conversion.entity_changed"),
+        FieldComparator("calculation", "metric.conversion.calculation_changed"),
+        FieldComparator("base_metric", "metric.conversion.base_metric_changed"),
+        FieldComparator("conversion_metric", "metric.conversion.conversion_metric_changed"),
+        FieldComparator("constant_properties", "metric.conversion.constant_properties_changed"),
     ),
 }
 
@@ -122,6 +144,15 @@ FIELD_DIFF_POLICY = {
         "numerator": {"ratio": "metric.ratio.numerator_changed"},
         "denominator": {"ratio": "metric.ratio.denominator_changed"},
         "input_metrics": {"derived": "metric.derived.inputs_changed"},
+        "input_metric": {"cumulative": "metric.cumulative.input_metric_changed"},
+        "window": {"cumulative": "metric.cumulative.window_changed"},
+        "grain_to_date": {"cumulative": "metric.cumulative.grain_to_date_changed"},
+        "period_agg": {"cumulative": "metric.cumulative.period_agg_changed"},
+        "entity": {"conversion": "metric.conversion.entity_changed"},
+        "calculation": {"conversion": "metric.conversion.calculation_changed"},
+        "base_metric": {"conversion": "metric.conversion.base_metric_changed"},
+        "conversion_metric": {"conversion": "metric.conversion.conversion_metric_changed"},
+        "constant_properties": {"conversion": "metric.conversion.constant_properties_changed"},
         "non_additive_dimension": {"simple": "metric.simple.non_additive_dimension_changed"},
         "owner_model": "metric.owner_model_changed",
         "source": False,
@@ -291,6 +322,15 @@ def _describe_change(code: str, path: str, before: object, after: object) -> str
         "metric.ratio.denominator_changed": f"{subject} changed denominator from `{before}` to `{after}`.",
         "metric.derived.inputs_changed": f"{subject} changed derived inputs from `{before}` to `{after}`.",
         "metric.derived.expr_changed": f"{subject} changed derived expression from `{before}` to `{after}`.",
+        "metric.cumulative.input_metric_changed": f"{subject} changed input metric from `{before}` to `{after}`.",
+        "metric.cumulative.window_changed": f"{subject} changed window from `{before}` to `{after}`.",
+        "metric.cumulative.grain_to_date_changed": f"{subject} changed grain-to-date from `{before}` to `{after}`.",
+        "metric.cumulative.period_agg_changed": f"{subject} changed period aggregation from `{before}` to `{after}`.",
+        "metric.conversion.entity_changed": f"{subject} changed entity from `{before}` to `{after}`.",
+        "metric.conversion.calculation_changed": f"{subject} changed calculation from `{before}` to `{after}`.",
+        "metric.conversion.base_metric_changed": f"{subject} changed base metric from `{before}` to `{after}`.",
+        "metric.conversion.conversion_metric_changed": f"{subject} changed conversion metric from `{before}` to `{after}`.",
+        "metric.conversion.constant_properties_changed": f"{subject} changed constant properties from `{before}` to `{after}`.",
     }
     return messages[code]
 
@@ -302,6 +342,8 @@ def _subject_for_change(code: str, path: str) -> str:
             ("metric.simple.", "Simple metric"),
             ("metric.ratio.", "Ratio metric"),
             ("metric.derived.", "Derived metric"),
+            ("metric.cumulative.", "Cumulative metric"),
+            ("metric.conversion.", "Conversion metric"),
         ]
     )
     for prefix, replacement in prefixes.items():

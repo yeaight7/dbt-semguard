@@ -43,12 +43,13 @@ At a high level:
 
 It keeps the pieces that affect meaning and ignores cosmetic metadata.
 
-## What v0.2 Adds
+## What v0.3 Adds
 
-`v0.2` adds two workflow improvements that make the output easier to act on in real PRs:
+`v0.3` extends semantic-depth coverage beyond the initial metric families:
 
-- best-effort file and line diagnostics for YAML-derived semantic changes
-- optional sticky PR comments from the GitHub Action so the latest report stays in one place
+- breaking detection for entity and dimension expression changes
+- support for cumulative metrics and conversion metrics in both YAML and `semantic_manifest.json`
+- stronger parity checks so equivalent YAML and manifest changes emit the same semantic findings
 
 ## When To Use Which Command
 

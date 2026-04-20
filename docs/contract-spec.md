@@ -36,6 +36,15 @@
       "numerator": null,
       "denominator": null,
       "input_metrics": [],
+      "input_metric": null,
+      "window": null,
+      "grain_to_date": null,
+      "period_agg": null,
+      "entity": null,
+      "calculation": null,
+      "base_metric": null,
+      "conversion_metric": null,
+      "constant_properties": null,
       "non_additive_dimension": null,
       "owner_model": "orders"
     }
@@ -53,6 +62,8 @@ Contracts may also include optional `source` diagnostics on semantic models, ent
 - Dimensions, dimension types, expressions, and granularity
 - Metric type and type-specific parameters
 - Metric-level `agg_time_dimension`
+- Cumulative metric parameters: `input_metric`, `window`, `grain_to_date`, `period_agg`
+- Conversion metric parameters: `entity`, `calculation`, `base_metric`, `conversion_metric`, `constant_properties`
 - Metric non-additive dimension configuration
 - Metric filters
 - Metric label
@@ -68,7 +79,7 @@ Contracts may also include optional `source` diagnostics on semantic models, ent
 - Tags and arbitrary metadata
 - File paths and line numbers
 
-## Supported inputs in v0.2
+## Supported inputs in v0.3
 
 - Latest dbt Semantic Layer YAML spec
 - Explicit dbt `semantic_manifest.json` input
@@ -76,10 +87,11 @@ Contracts may also include optional `source` diagnostics on semantic models, ent
 
 ## Notes
 
-- `v0.2` does not infer renames.
+- `v0.3` does not infer renames.
 - YAML extraction can emit `source.file` and `source.line` diagnostics; manifest inputs may not.
 - Latest spec assumptions follow dbt docs updated April 16, 2026:
   - `semantic_model` lives under `models`
   - entities and dimensions live under `columns`
   - simple metrics live within the model
   - advanced metrics remain under top-level `metrics`
+  - advanced metric families include ratio, derived, cumulative, and conversion

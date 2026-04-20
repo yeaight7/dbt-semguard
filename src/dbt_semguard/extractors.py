@@ -241,6 +241,15 @@ def _build_metric_contract(payload: dict[str, Any], owner_model: str | None, sou
         numerator=_normalize_metric_ref(payload.get("numerator")),
         denominator=_normalize_metric_ref(payload.get("denominator")),
         input_metrics=_normalize_input_metrics(payload.get("input_metrics")),
+        input_metric=_normalize_metric_ref(payload.get("input_metric")),
+        window=_normalize_value(payload.get("window")),
+        grain_to_date=_normalize_value(payload.get("grain_to_date")),
+        period_agg=_normalize_value(payload.get("period_agg")),
+        entity=_normalize_metric_ref(payload.get("entity")),
+        calculation=_normalize_value(payload.get("calculation")),
+        base_metric=_normalize_metric_ref(payload.get("base_metric")),
+        conversion_metric=_normalize_metric_ref(payload.get("conversion_metric")),
+        constant_properties=_normalize_value(payload.get("constant_properties")),
         non_additive_dimension=payload.get("non_additive_dimension"),
         owner_model=owner_model,
         source=_source_for(payload, source_file),
@@ -254,6 +263,8 @@ def _build_metric_contract_from_semantic_manifest(
 ) -> MetricContract:
     type_params = payload.get("type_params") or {}
     metric_aggregation_params = type_params.get("metric_aggregation_params") or {}
+    cumulative_type_params = type_params.get("cumulative_type_params") or {}
+    conversion_type_params = type_params.get("conversion_type_params") or {}
     metric_type = str(payload["type"])
     owner_model = metric_aggregation_params.get("semantic_model")
     measure_name = _normalize_metric_ref(type_params.get("measure"))
@@ -307,6 +318,53 @@ def _build_metric_contract_from_semantic_manifest(
         numerator=_normalize_metric_ref(type_params.get("numerator")),
         denominator=_normalize_metric_ref(type_params.get("denominator")),
         input_metrics=_normalize_input_metrics(type_params.get("metrics") or payload.get("input_metrics")),
+        input_metric=_normalize_metric_ref(type_params.get("input_metric") or type_params.get("measure") or payload.get("input_metric"))
+        if metric_type == "cumulative"
+        else None,
+        window=_normalize_value(cumulative_type_params.get("window") or type_params.get("window") or payload.get("window"))
+        if metric_type == "cumulative"
+        else None,
+        grain_to_date=_normalize_value(
+            cumulative_type_params.get("grain_to_date") or type_params.get("grain_to_date") or payload.get("grain_to_date")
+        )
+        if metric_type == "cumulative"
+        else None,
+        period_agg=_normalize_value(
+            cumulative_type_params.get("period_agg") or type_params.get("period_agg") or payload.get("period_agg")
+        )
+        if metric_type == "cumulative"
+        else None,
+        entity=_normalize_metric_ref(conversion_type_params.get("entity") or type_params.get("entity") or payload.get("entity"))
+        if metric_type == "conversion"
+        else None,
+        calculation=_normalize_value(
+            conversion_type_params.get("calculation") or type_params.get("calculation") or payload.get("calculation")
+        )
+        if metric_type == "conversion"
+        else None,
+        base_metric=_normalize_metric_ref(
+            conversion_type_params.get("base_metric")
+            or conversion_type_params.get("base_measure")
+            or type_params.get("base_metric")
+            or payload.get("base_metric")
+        )
+        if metric_type == "conversion"
+        else None,
+        conversion_metric=_normalize_metric_ref(
+            conversion_type_params.get("conversion_metric")
+            or conversion_type_params.get("conversion_measure")
+            or type_params.get("conversion_metric")
+            or payload.get("conversion_metric")
+        )
+        if metric_type == "conversion"
+        else None,
+        constant_properties=_normalize_value(
+            conversion_type_params.get("constant_properties")
+            or type_params.get("constant_properties")
+            or payload.get("constant_properties")
+        )
+        if metric_type == "conversion"
+        else None,
         non_additive_dimension=non_additive_dimension,
         owner_model=owner_model,
     )

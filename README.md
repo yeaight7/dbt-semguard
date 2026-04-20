@@ -171,6 +171,8 @@ Covered semantic comparisons:
 - Simple metric aggregation, expression, label, filter, ownership, aggregation-time, and non-additive changes
 - Ratio metric numerator and denominator changes
 - Derived metric expression and input metric changes
+- Cumulative metric input, window, grain-to-date, and period-aggregation changes
+- Conversion metric entity, calculation, base metric, conversion metric, and constant-property changes
 - Additive changes such as new entities, new dimensions, and new metrics
 
 Current automated coverage:

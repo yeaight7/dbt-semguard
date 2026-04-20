@@ -107,3 +107,173 @@ def test_manifest_extractor_rejects_unresolvable_simple_metric_measure(tmp_path:
 
     with pytest.raises(ValueError, match="gross_revenue"):
         extract_contract_from_manifest(manifest_path)
+
+
+def test_yaml_extractor_supports_cumulative_and_conversion_metrics(tmp_path: Path):
+    models_dir = tmp_path / "models"
+    models_dir.mkdir()
+    (models_dir / "orders.yml").write_text(
+        """models:
+  - name: fct_orders
+    semantic_model:
+      enabled: true
+      name: orders
+    agg_time_dimension: ordered_at
+    columns:
+      - name: ordered_at
+        granularity: day
+        dimension:
+          type: time
+      - name: user_id
+        entity:
+          type: primary
+          name: user
+    metrics:
+      - name: revenue_daily
+        type: simple
+        agg: sum
+        expr: order_total
+      - name: signups
+        type: simple
+        agg: count
+        expr: 1
+      - name: paid_signups
+        type: simple
+        agg: count
+        expr: 1
+
+metrics:
+  - name: revenue_mtd
+    type: cumulative
+    input_metric: revenue_daily
+    window: 30d
+    grain_to_date: month
+    period_agg: sum
+  - name: signup_conversion
+    type: conversion
+    entity: user
+    calculation: conversion_rate
+    base_metric: signups
+    conversion_metric: paid_signups
+    constant_properties:
+      - base_property: plan
+        conversion_property: plan
+""",
+        encoding="utf-8",
+    )
+
+    contract = extract_contract_from_yaml_dir(tmp_path)
+
+    revenue_mtd = contract.metrics["revenue_mtd"]
+    signup_conversion = contract.metrics["signup_conversion"]
+
+    assert revenue_mtd.metric_type == "cumulative"
+    assert revenue_mtd.input_metric == "revenue_daily"
+    assert revenue_mtd.window == "30d"
+    assert revenue_mtd.grain_to_date == "month"
+    assert revenue_mtd.period_agg == "sum"
+
+    assert signup_conversion.metric_type == "conversion"
+    assert signup_conversion.entity == "user"
+    assert signup_conversion.calculation == "conversion_rate"
+    assert signup_conversion.base_metric == "signups"
+    assert signup_conversion.conversion_metric == "paid_signups"
+    assert signup_conversion.constant_properties == '[{"base_property": "plan", "conversion_property": "plan"}]'
+
+
+def test_manifest_extractor_supports_cumulative_and_conversion_metrics(tmp_path: Path):
+    manifest_path = tmp_path / "semantic_manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "semantic_models": [
+                    {
+                        "name": "orders",
+                        "defaults": {"agg_time_dimension": "ordered_at"},
+                        "node_relation": {"alias": "fct_orders"},
+                        "entities": [{"name": "user", "type": "primary", "expr": "user_id"}],
+                        "dimensions": [
+                            {
+                                "name": "ordered_at",
+                                "type": "time",
+                                "expr": "ordered_at",
+                                "type_params": {"time_granularity": "day"},
+                            }
+                        ],
+                        "measures": [
+                            {"name": "revenue_daily", "agg": "sum", "expr": "order_total"},
+                            {"name": "signups", "agg": "count", "expr": "1"},
+                            {"name": "paid_signups", "agg": "count", "expr": "1"},
+                        ],
+                    }
+                ],
+                "metrics": [
+                    {
+                        "name": "revenue_daily",
+                        "type": "simple",
+                        "type_params": {
+                            "measure": {"name": "revenue_daily"},
+                            "metric_aggregation_params": {"semantic_model": "orders", "agg": "sum"},
+                        },
+                    },
+                    {
+                        "name": "signups",
+                        "type": "simple",
+                        "type_params": {
+                            "measure": {"name": "signups"},
+                            "metric_aggregation_params": {"semantic_model": "orders", "agg": "count"},
+                        },
+                    },
+                    {
+                        "name": "paid_signups",
+                        "type": "simple",
+                        "type_params": {
+                            "measure": {"name": "paid_signups"},
+                            "metric_aggregation_params": {"semantic_model": "orders", "agg": "count"},
+                        },
+                    },
+                    {
+                        "name": "revenue_mtd",
+                        "type": "cumulative",
+                        "type_params": {
+                            "measure": {"name": "revenue_daily"},
+                            "cumulative_type_params": {"window": "30d", "grain_to_date": "month", "period_agg": "sum"},
+                        },
+                    },
+                    {
+                        "name": "signup_conversion",
+                        "type": "conversion",
+                        "type_params": {
+                            "conversion_type_params": {
+                                "entity": "user",
+                                "calculation": "conversion_rate",
+                                "base_measure": "signups",
+                                "conversion_measure": "paid_signups",
+                                "constant_properties": [{"base_property": "plan", "conversion_property": "plan"}],
+                            }
+                        },
+                    },
+                ],
+                "project_configuration": {"time_spines": [], "time_spine_table_configurations": []},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    contract = extract_contract_from_manifest(manifest_path)
+
+    revenue_mtd = contract.metrics["revenue_mtd"]
+    signup_conversion = contract.metrics["signup_conversion"]
+
+    assert revenue_mtd.metric_type == "cumulative"
+    assert revenue_mtd.input_metric == "revenue_daily"
+    assert revenue_mtd.window == "30d"
+    assert revenue_mtd.grain_to_date == "month"
+    assert revenue_mtd.period_agg == "sum"
+
+    assert signup_conversion.metric_type == "conversion"
+    assert signup_conversion.entity == "user"
+    assert signup_conversion.calculation == "conversion_rate"
+    assert signup_conversion.base_metric == "signups"
+    assert signup_conversion.conversion_metric == "paid_signups"
+    assert signup_conversion.constant_properties == '[{"base_property": "plan", "conversion_property": "plan"}]'

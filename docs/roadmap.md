@@ -3,7 +3,7 @@
 ## Near term
 
 - Broaden semantic manifest parsing beyond the current dbt `semantic_manifest.json` subset
-- Support richer MetricFlow metric types beyond the current diff coverage
+- Support additional advanced metric semantics beyond the current ratio, derived, cumulative, and conversion coverage
 - Add inline GitHub annotations/check-run diagnostics beyond the current sticky PR comment support
 
 ## Later phases

@@ -36,8 +36,15 @@
     "aov": {
       "agg": null,
       "agg_time_dimension": null,
+      "base_metric": null,
+      "calculation": null,
+      "constant_properties": null,
+      "conversion_metric": null,
       "denominator": "order_count",
       "expr": null,
+      "entity": null,
+      "grain_to_date": null,
+      "input_metric": null,
       "filter": null,
       "input_metrics": [],
       "label": "Average order value",
@@ -45,13 +52,22 @@
       "name": "aov",
       "non_additive_dimension": null,
       "numerator": "gross_revenue",
-      "owner_model": null
+      "owner_model": null,
+      "period_agg": null,
+      "window": null
     },
     "gross_revenue": {
       "agg": "sum",
       "agg_time_dimension": null,
+      "base_metric": null,
+      "calculation": null,
+      "constant_properties": null,
+      "conversion_metric": null,
       "denominator": null,
       "expr": "order_total",
+      "entity": null,
+      "grain_to_date": null,
+      "input_metric": null,
       "filter": "order_status = 'completed'",
       "input_metrics": [],
       "label": "Gross Revenue",
@@ -59,13 +75,22 @@
       "name": "gross_revenue",
       "non_additive_dimension": null,
       "numerator": null,
-      "owner_model": "orders"
+      "owner_model": "orders",
+      "period_agg": null,
+      "window": null
     },
     "order_count": {
       "agg": "count",
       "agg_time_dimension": null,
+      "base_metric": null,
+      "calculation": null,
+      "constant_properties": null,
+      "conversion_metric": null,
       "denominator": null,
       "expr": "1",
+      "entity": null,
+      "grain_to_date": null,
+      "input_metric": null,
       "filter": null,
       "input_metrics": [],
       "label": null,
@@ -73,7 +98,9 @@
       "name": "order_count",
       "non_additive_dimension": null,
       "numerator": null,
-      "owner_model": "orders"
+      "owner_model": "orders",
+      "period_agg": null,
+      "window": null
     }
   }
 }

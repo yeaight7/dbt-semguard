@@ -76,6 +76,15 @@ class MetricContract(SemanticComparableModel):
     numerator: str | None = None
     denominator: str | None = None
     input_metrics: list[str] = Field(default_factory=list)
+    input_metric: str | None = None
+    window: str | None = None
+    grain_to_date: str | None = None
+    period_agg: str | None = None
+    entity: str | None = None
+    calculation: str | None = None
+    base_metric: str | None = None
+    conversion_metric: str | None = None
+    constant_properties: str | None = None
     non_additive_dimension: dict[str, Any] | None = None
     owner_model: str | None = None
     source: SourceLocation | None = None
