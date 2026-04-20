@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Added breaking change detection for entity expression changes and dimension expression changes
+- Added a field-coverage policy for the semantic contract so diffed, nested, and intentionally excluded fields are auditable in tests
+- Added CI smoke coverage for the published action in manifest mode with hostile spaced paths
+
+### Changed
+
+- Refactored the diff engine to use declarative field comparators instead of ad hoc per-field branching
+- Markdown and text reports now group multiple findings under the same semantic object for easier review
+- Change messages now include more precise semantic object context, especially for entities and dimensions nested under semantic models
+
 ## v0.2.0 - 2026-04-17
 
 Focused release for PR usability and source-level diagnostics.

@@ -134,3 +134,31 @@ jobs:
           base-ref: ${{ env.BASE_SHA }}
           head-ref: ${{ env.HEAD_SHA }}
           fail-on: breaking
+
+  published-action-smoke-manifest:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create published-consumer manifest fixtures with hostile paths
+        run: |
+          mkdir -p "tmp artifacts/published base manifest" "tmp artifacts/published head manifest"
+          cp tests/fixtures/manifest/base_semantic_manifest.json "tmp artifacts/published base manifest/semantic_manifest.json"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          base_path = Path("tests/fixtures/manifest/base_semantic_manifest.json")
+          head_path = Path("tmp artifacts/published head manifest/semantic_manifest.json")
+          payload = json.loads(base_path.read_text(encoding="utf-8"))
+          payload["metrics"][0]["filter"] = {"where_sql_template": "order_status in ('completed', 'refunded')"}
+          head_path.write_text(json.dumps(payload), encoding="utf-8")
+          PY
+
+      - uses: yeaight7/dbt-semguard@v0.2.0
+        with:
+          base-manifest: tmp artifacts/published base manifest/semantic_manifest.json
+          head-manifest: tmp artifacts/published head manifest/semantic_manifest.json
+          fail-on: breaking

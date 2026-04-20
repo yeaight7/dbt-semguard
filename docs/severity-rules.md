@@ -11,8 +11,10 @@ These fail `semguard check` by default.
 - `metric.owner_model_changed`
 - `entity.removed`
 - `entity.type_changed`
+- `entity.expr_changed`
 - `dimension.removed`
 - `dimension.type_changed`
+- `dimension.expr_changed`
 - `metric.removed`
 - `metric.type_changed`
 - `metric.simple.agg_changed`
@@ -49,5 +51,6 @@ Safe changes do not appear in the semantic diff.
 ## Defaults
 
 - Default threshold: `--fail-on breaking`
-- No repo-level config file in `v0.1`
-- No rename inference in `v0.1`
+- No repo-level config file in `v0.3`
+- No rename inference in `v0.3`
+- `source` diagnostics and identity fields such as object names are intentionally excluded from semantic equality

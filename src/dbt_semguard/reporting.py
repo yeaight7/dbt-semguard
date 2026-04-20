@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+from collections import OrderedDict
 
+from dbt_semguard.diffing import describe_path_title
 from dbt_semguard.models import ChangeRecord, Report
 
 
@@ -55,8 +57,7 @@ def _render_markdown(report: Report) -> str:
         if not matching:
             continue
         lines.append(f"### {severity.capitalize()} changes")
-        for change in matching:
-            lines.append(f"- {_render_change_with_source(change)}")
+        lines.extend(_render_grouped_changes(matching, heading_level="####"))
         lines.append("")
 
     lines.append(f"Status: {'blocking' if report.blocking else 'passing'}")
@@ -73,8 +74,7 @@ def _render_text(report: Report) -> str:
             if not matching:
                 continue
             lines.append(f"{severity.upper()} CHANGES")
-            for change in matching:
-                lines.append(f"- {_render_change_with_source(change)}")
+            lines.extend(_render_grouped_changes(matching, heading_level=None))
             lines.append("")
     lines.append(f"Status: {'blocking' if report.blocking else 'passing'}")
     return "\n".join(lines)
@@ -84,3 +84,19 @@ def _render_change_with_source(change: ChangeRecord) -> str:
     if change.source is None:
         return change.message
     return f"{change.message} (`{change.source.display()}`)"
+
+
+def _render_grouped_changes(changes: list[ChangeRecord], *, heading_level: str | None) -> list[str]:
+    grouped: OrderedDict[str, list[ChangeRecord]] = OrderedDict()
+    for change in sorted(changes, key=lambda item: (item.path, item.code, item.message)):
+        grouped.setdefault(change.path, []).append(change)
+
+    lines: list[str] = []
+    for path, path_changes in grouped.items():
+        should_group = len(path_changes) > 1
+        if should_group:
+            title = describe_path_title(path)
+            lines.append(f"{heading_level} {title}" if heading_level else title)
+        for change in path_changes:
+            lines.append(f"- {_render_change_with_source(change)}")
+    return lines

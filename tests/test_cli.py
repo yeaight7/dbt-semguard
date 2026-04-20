@@ -96,5 +96,5 @@ def test_diff_command_renders_markdown_with_diagnostics(tmp_path: Path):
     )
 
     assert result.returncode == 0, result.stderr
-    assert "Metric `gross_revenue` changed aggregation from `sum` to `avg`." in result.stdout
+    assert "Simple metric `gross_revenue` changed aggregation from `sum` to `avg`." in result.stdout
     assert "models/orders.yml:21" in result.stdout

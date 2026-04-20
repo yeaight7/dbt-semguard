@@ -33,14 +33,19 @@ def test_ci_workflow_covers_manifest_inputs_and_published_consumer_path():
 
     assert "action-smoke-manifest" in jobs
     assert "published-action-smoke" in jobs
+    assert "published-action-smoke-manifest" in jobs
 
     manifest_steps = jobs["action-smoke-manifest"]["steps"]
     published_steps = jobs["published-action-smoke"]["steps"]
+    published_manifest_steps = jobs["published-action-smoke-manifest"]["steps"]
 
     assert any(step.get("uses") == "./" for step in manifest_steps)
     assert any("base-manifest" in str(step.get("with", {})) for step in manifest_steps)
     assert any("head-manifest" in str(step.get("with", {})) for step in manifest_steps)
     assert any(step.get("uses") == "yeaight7/dbt-semguard@v0.2.0" for step in published_steps)
+    assert any(step.get("uses") == "yeaight7/dbt-semguard@v0.2.0" for step in published_manifest_steps)
+    assert any("base-manifest" in str(step.get("with", {})) for step in published_manifest_steps)
+    assert any("head-manifest" in str(step.get("with", {})) for step in published_manifest_steps)
 
 
 def test_action_exposes_pr_comment_input():

@@ -154,7 +154,7 @@ JSON reports contain:
 
 ## Coverage
 
-`dbt-semguard` `v0.2.0` covers the highest-value semantic changes in the latest dbt Semantic Layer spec.
+`dbt-semguard` currently covers the highest-value semantic changes in the latest dbt Semantic Layer spec.
 
 Covered extractors and inputs:
 
@@ -166,8 +166,8 @@ Covered semantic comparisons:
 
 - Semantic model add/remove and backing model changes
 - Semantic model default aggregation time dimension changes
-- Entity add/remove and entity type changes
-- Dimension add/remove, type changes, and time granularity changes
+- Entity add/remove, type changes, and expression changes
+- Dimension add/remove, type changes, expression changes, and time granularity changes
 - Simple metric aggregation, expression, label, filter, ownership, aggregation-time, and non-additive changes
 - Ratio metric numerator and denominator changes
 - Derived metric expression and input metric changes
@@ -178,10 +178,12 @@ Current automated coverage:
 - YAML extraction for the latest spec
 - Manifest normalization
 - Semantic diff severity mapping for breaking and risky changes
+- Declarative field-coverage policy so contract fields are explicitly diffed, nested, or intentionally excluded
 - Source diagnostics in extracted YAML contracts and change reports
 - CLI `extract`, `diff`, and `check`
 - Sticky PR comment delivery through the GitHub Action
 - Checkout-free git ref mode
+- CI smoke coverage for the published action path in both git-ref and manifest modes, including spaced manifest paths
 
 ## Current Limitations
 
