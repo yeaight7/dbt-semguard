@@ -189,7 +189,7 @@ Current automated coverage:
 
 ## Current Limitations
 
-Known `v0.2.0` limitations are intentionally narrow:
+Known `v0.3.0` limitations are intentionally narrow:
 
 - Manifest parsing expects dbt `semantic_manifest.json`, not the general-purpose dbt `manifest.json` artifact.
 - The tool targets the latest Semantic Layer YAML spec only; legacy metric and semantic-model syntax is not included.
@@ -210,7 +210,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: yeaight7/dbt-semguard@v0.2.0
+      - uses: yeaight7/dbt-semguard@v0.3.0
         with:
           base-ref: ${{ github.event.pull_request.base.sha }}
           head-ref: ${{ github.sha }}

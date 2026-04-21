@@ -42,8 +42,8 @@ def test_ci_workflow_covers_manifest_inputs_and_published_consumer_path():
     assert any(step.get("uses") == "./" for step in manifest_steps)
     assert any("base-manifest" in str(step.get("with", {})) for step in manifest_steps)
     assert any("head-manifest" in str(step.get("with", {})) for step in manifest_steps)
-    assert any(step.get("uses") == "yeaight7/dbt-semguard@v0.2.0" for step in published_steps)
-    assert any(step.get("uses") == "yeaight7/dbt-semguard@v0.2.0" for step in published_manifest_steps)
+    assert any(step.get("uses") == "yeaight7/dbt-semguard@v0.3.0" for step in published_steps)
+    assert any(step.get("uses") == "yeaight7/dbt-semguard@v0.3.0" for step in published_manifest_steps)
     assert any("base-manifest" in str(step.get("with", {})) for step in published_manifest_steps)
     assert any("head-manifest" in str(step.get("with", {})) for step in published_manifest_steps)
 
@@ -58,7 +58,7 @@ def test_action_exposes_pr_comment_input():
 def test_readme_uses_marketplace_action_ref_and_relative_links():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
-    assert "- uses: yeaight7/dbt-semguard@v0.2.0" in readme
+    assert "- uses: yeaight7/dbt-semguard@v0.3.0" in readme
     assert "uses: ./" not in readme
     assert "C:/Users/Rivero/" not in readme
     assert "(docs/contract-spec.md)" in readme
