@@ -8,6 +8,10 @@ on:
 
 jobs:
   published-action-smoke:
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
