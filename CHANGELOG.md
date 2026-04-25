@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.4.0 - 2026-04-24
+
+### Added
+
+- Added `.semguard.yml` support for YAML discovery `include` and `exclude` rules
+- Added default YAML discovery safeguards to focus extraction on semantic directories and skip common non-project paths
+- Added monorepo coverage tests for local YAML mode and checkout-free git ref mode scoped by `--project-dir`
+- Added YAML validation tests for missing required metric/entity/dimension fields and malformed YAML
+
+### Changed
+
+- Git ref YAML extraction now scopes file listing to the selected `--project-dir` instead of scanning the full repository tree
+- YAML extraction now raises user-facing validation errors with source-file context instead of surfacing raw `KeyError` exceptions
+- README and usage docs now document monorepo `--project-dir` behavior, `.semguard.yml`, and `v0.4.0` migration notes
+
 ## v0.3.0 - 2026-04-21
 
 ### Added

@@ -129,7 +129,7 @@ jobs:
           git commit -m "head semantic model"
           echo "HEAD_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
 
-      - uses: yeaight7/dbt-semguard@v0.3.0
+      - uses: yeaight7/dbt-semguard@v0.4.0
         with:
           base-ref: ${{ env.BASE_SHA }}
           head-ref: ${{ env.HEAD_SHA }}
@@ -157,7 +157,7 @@ jobs:
           head_path.write_text(json.dumps(payload), encoding="utf-8")
           PY
 
-      - uses: yeaight7/dbt-semguard@v0.3.0
+      - uses: yeaight7/dbt-semguard@v0.4.0
         with:
           base-manifest: tmp artifacts/published base manifest/semantic_manifest.json
           head-manifest: tmp artifacts/published head manifest/semantic_manifest.json
