@@ -277,3 +277,205 @@ def test_manifest_extractor_supports_cumulative_and_conversion_metrics(tmp_path:
     assert signup_conversion.base_metric == "signups"
     assert signup_conversion.conversion_metric == "paid_signups"
     assert signup_conversion.constant_properties == '[{"base_property": "plan", "conversion_property": "plan"}]'
+
+
+def test_yaml_extractor_scopes_to_project_dir_in_monorepo(tmp_path: Path):
+    project_a = tmp_path / "dbt_project_a"
+    project_b = tmp_path / "dbt_project_b"
+    (project_a / "models").mkdir(parents=True)
+    (project_b / "models").mkdir(parents=True)
+
+    (project_a / "models" / "orders.yml").write_text(
+        """models:
+  - name: fct_orders
+    semantic_model:
+      enabled: true
+      name: orders
+    metrics:
+      - name: order_count
+        type: simple
+        agg: count
+        expr: 1
+""",
+        encoding="utf-8",
+    )
+    (project_b / "models" / "orders.yml").write_text(
+        """models:
+  - name: fct_orders
+    semantic_model:
+      enabled: true
+      name: orders
+    metrics:
+      - name: order_count
+        type: simple
+        agg: sum
+        expr: 1
+""",
+        encoding="utf-8",
+    )
+
+    contract = extract_contract_from_yaml_dir(project_a)
+
+    assert contract.metrics["order_count"].agg == "count"
+
+
+def test_yaml_extractor_uses_default_include_exclude_filters(tmp_path: Path):
+    (tmp_path / "models").mkdir()
+    (tmp_path / "misc").mkdir()
+    (tmp_path / "models" / "orders.yml").write_text(
+        """models:
+  - name: fct_orders
+    semantic_model:
+      enabled: true
+      name: orders
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "misc" / "extra.yml").write_text(
+        """metrics:
+  - name: ignored_metric
+    type: simple
+    agg: count
+    expr: 1
+""",
+        encoding="utf-8",
+    )
+
+    contract = extract_contract_from_yaml_dir(tmp_path)
+
+    assert "ignored_metric" not in contract.metrics
+
+
+def test_yaml_extractor_applies_semguard_include_exclude_overrides(tmp_path: Path):
+    (tmp_path / "models").mkdir()
+    (tmp_path / "misc").mkdir()
+    (tmp_path / ".semguard.yml").write_text(
+        """include:
+  - misc/**/*.yml
+exclude:
+  - models/**
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "models" / "orders.yml").write_text(
+        """models:
+  - name: fct_orders
+    semantic_model:
+      enabled: true
+      name: orders
+""",
+        encoding="utf-8",
+    )
+    (tmp_path / "misc" / "extra.yml").write_text(
+        """metrics:
+  - name: custom_metric
+    type: simple
+    agg: count
+    expr: 1
+""",
+        encoding="utf-8",
+    )
+
+    contract = extract_contract_from_yaml_dir(tmp_path)
+
+    assert sorted(contract.semantic_models) == []
+    assert sorted(contract.metrics) == ["custom_metric"]
+
+
+def test_yaml_extractor_reports_metric_missing_name_with_context(tmp_path: Path):
+    (tmp_path / "models").mkdir()
+    (tmp_path / "models" / "bad.yml").write_text(
+        """metrics:
+  - type: simple
+    agg: count
+    expr: 1
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match=r"missing required 'name'.*models/bad.yml:2"):
+        extract_contract_from_yaml_dir(tmp_path)
+
+
+def test_yaml_extractor_reports_metric_missing_type_with_context(tmp_path: Path):
+    (tmp_path / "models").mkdir()
+    (tmp_path / "models" / "bad.yml").write_text(
+        """metrics:
+  - name: gross_revenue
+    agg: count
+    expr: 1
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match=r"missing required 'type'.*models/bad.yml:2"):
+        extract_contract_from_yaml_dir(tmp_path)
+
+
+def test_yaml_extractor_reports_entity_missing_type_with_context(tmp_path: Path):
+    (tmp_path / "models").mkdir()
+    (tmp_path / "models" / "bad.yml").write_text(
+        """models:
+  - name: fct_orders
+    semantic_model:
+      enabled: true
+      name: orders
+    columns:
+      - name: order_id
+        entity:
+          name: order
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match=r"entity 'order'.*missing required 'type'.*models/bad.yml:8"):
+        extract_contract_from_yaml_dir(tmp_path)
+
+
+def test_yaml_extractor_reports_dimension_missing_type_with_context(tmp_path: Path):
+    (tmp_path / "models").mkdir()
+    (tmp_path / "models" / "bad.yml").write_text(
+        """models:
+  - name: fct_orders
+    semantic_model:
+      enabled: true
+      name: orders
+    columns:
+      - name: ordered_at
+        granularity: day
+        dimension:
+          name: ordered_at
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match=r"dimension 'ordered_at'.*missing required 'type'.*models/bad.yml:9"):
+        extract_contract_from_yaml_dir(tmp_path)
+
+
+def test_yaml_extractor_reports_non_mapping_semantic_model_payload(tmp_path: Path):
+    (tmp_path / "models").mkdir()
+    (tmp_path / "models" / "bad.yml").write_text(
+        """models:
+  - name: fct_orders
+    semantic_model: true
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match=r"semantic_model' must be a mapping.*models/bad.yml:3"):
+        extract_contract_from_yaml_dir(tmp_path)
+
+
+def test_yaml_extractor_reports_malformed_yaml_with_context(tmp_path: Path):
+    (tmp_path / "models").mkdir()
+    (tmp_path / "models" / "bad.yml").write_text(
+        """models:
+  - name: fct_orders
+    semantic_model: [
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match=r"Malformed YAML in 'models/bad.yml:4'"):
+        extract_contract_from_yaml_dir(tmp_path)
