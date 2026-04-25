@@ -43,13 +43,14 @@ At a high level:
 
 It keeps the pieces that affect meaning and ignores cosmetic metadata.
 
-## What v0.3 Adds
+## What v0.4.0 Adds
 
-`v0.3` extends semantic-depth coverage beyond the initial metric families:
+`v0.4.0` focuses on analysis-scope correctness and parser robustness:
 
-- breaking detection for entity and dimension expression changes
-- support for cumulative metrics and conversion metrics in both YAML and `semantic_manifest.json`
-- stronger parity checks so equivalent YAML and manifest changes emit the same semantic findings
+- strict monorepo scoping for `--project-dir` in git ref mode
+- safe default include/exclude YAML discovery patterns
+- optional `.semguard.yml` include/exclude overrides
+- clearer YAML extraction errors with file/line context for invalid semantic payloads
 
 ## When To Use Which Command
 
@@ -61,6 +62,7 @@ Examples:
 
 ```bash
 semguard diff --base-ref main --head-ref HEAD --project-dir .
+semguard diff --base-ref main --head-ref HEAD --project-dir analytics/dbt
 semguard diff --base-contract base.json --head-contract head.json --format markdown
 ```
 

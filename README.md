@@ -97,6 +97,14 @@ Typical use:
 - `diff` when you want to inspect what changed
 - `check` when you want a blocking exit code for automation or local scripts
 
+For monorepos, always point `--project-dir` at the dbt project root you want to analyze:
+
+```bash
+semguard diff --base-ref main --head-ref HEAD --project-dir analytics/dbt
+```
+
+Git ref mode and local YAML mode now both scope discovery to this directory.
+
 ### Compare exported contracts directly
 
 Use this when you want to compare two precomputed semantic contracts:
@@ -121,6 +129,27 @@ Use this when you want a stable machine-readable snapshot of semantic meaning:
 semguard extract --source yaml --project-dir examples/ecommerce_dbt_project --output base-contract.json
 semguard extract --source manifest --manifest semantic_manifest.json --output manifest-contract.json
 ```
+
+### Configure YAML discovery with `.semguard.yml`
+
+Create `.semguard.yml` in your dbt project root to control which YAML files are scanned:
+
+```yaml
+include:
+  - models/**/*.yml
+  - models/**/*.yaml
+  - metrics/**/*.yml
+  - metrics/**/*.yaml
+  - semantic_models/**/*.yml
+  - semantic_models/**/*.yaml
+exclude:
+  - target/**
+  - dbt_packages/**
+  - .venv/**
+  - .github/**
+```
+If the file is not present, these defaults are applied automatically.
+
 
 ## Example Review Flow
 
@@ -189,7 +218,7 @@ Current automated coverage:
 
 ## Current Limitations
 
-Known `v0.3.0` limitations are intentionally narrow:
+Known `v0.4.0` limitations are intentionally narrow:
 
 - Manifest parsing expects dbt `semantic_manifest.json`, not the general-purpose dbt `manifest.json` artifact.
 - The tool targets the latest Semantic Layer YAML spec only; legacy metric and semantic-model syntax is not included.
@@ -210,7 +239,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: yeaight7/dbt-semguard@v0.3.0
+      - uses: yeaight7/dbt-semguard@v0.4.0
         with:
           base-ref: ${{ github.event.pull_request.base.sha }}
           head-ref: ${{ github.sha }}
@@ -227,6 +256,13 @@ The action writes:
 - a failing status when the configured threshold is reached
 
 This is the recommended setup when you want the semantic review to happen automatically on every PR.
+
+## Migration notes (`v0.4.0`)
+
+- Git ref extraction now scopes strictly to `--project-dir` for monorepos.
+- YAML discovery now uses safe default include/exclude patterns.
+- Optional `.semguard.yml` include/exclude rules are applied in both local and git-ref YAML extraction.
+- Invalid semantic YAML now raises user-facing errors with source context instead of raw `KeyError` tracebacks.
 
 ## Example project
 
