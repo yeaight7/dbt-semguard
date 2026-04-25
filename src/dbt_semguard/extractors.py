@@ -208,7 +208,7 @@ def _build_contract_from_yaml_documents(documents: Iterable[tuple[str, str]]) ->
                         )
                     if semantic_block.get("enabled", True) is False:
                         continue
-						model_name = _required_value(
+                    model_name = _required_value(
                         model,
                         key="name",
                         source_file=source_file,
