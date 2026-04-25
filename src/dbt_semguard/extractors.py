@@ -188,43 +188,64 @@ def _build_contract_from_yaml_documents(documents: Iterable[tuple[str, str]]) ->
     metrics: dict[str, MetricContract] = {}
 
     for source_file, content in documents:
-        for payload in yaml.load_all(content, Loader=_LineLoader):
-            if not isinstance(payload, dict):
-                continue
-
-            for model in payload.get("models", []) or []:
-                if not isinstance(model, dict):
+        try:
+            payloads = yaml.load_all(content, Loader=_LineLoader)
+            for payload in payloads:
+                if not isinstance(payload, dict):
                     continue
-                semantic_block = model.get("semantic_model")
-                if not isinstance(semantic_block, dict) or semantic_block.get("enabled", True) is False:
-                    continue
-
-                semantic_name = semantic_block.get("name") or model["name"]
-                contract = SemanticModelContract(
-                    name=semantic_name,
-                    model_name=model["name"],
-                    agg_time_dimension=model.get("agg_time_dimension"),
-                    source=_source_for_key(model, "semantic_model", source_file, semantic_block),
-                )
-
-                for column in model.get("columns", []) or []:
-                    if not isinstance(column, dict) or "name" not in column:
+                for model in payload.get("models", []) or []:
+                    if not isinstance(model, dict):
                         continue
-                    _attach_column_semantics(contract, column, source_file)
+                    semantic_block = model.get("semantic_model")
+                    if semantic_block is None:
+                        continue
+                    if not isinstance(semantic_block, dict):
+                        raise _yaml_validation_error(
+                            source_file,
+                            "Invalid semantic model definition: 'semantic_model' must be a mapping.",
+                            payload=model,
+                            key="semantic_model",
+                        )
+                    if semantic_block.get("enabled", True) is False:
+                        continue
+						model_name = _required_value(
+                        model,
+                        key="name",
+                        source_file=source_file,
+                        kind="model",
+                        fallback_payload=semantic_block,
+                    )
+                    semantic_name = semantic_block.get("name") or model_name
+                    contract = SemanticModelContract(
+                        name=str(semantic_name),
+                        model_name=str(model_name),
+                        agg_time_dimension=model.get("agg_time_dimension"),
+                        source=_source_for_key(model, "semantic_model", source_file, semantic_block),
+                    )
 
-                semantic_models[semantic_name] = contract
+                    for column in model.get("columns", []) or []:
+                        if not isinstance(column, dict) or "name" not in column:
+                            continue
+                        _attach_column_semantics(contract, column, source_file)
 
+                    semantic_models[contract.name] = contract
+
+                    for metric_payload in model.get("metrics", []) or []:
+                        if not isinstance(metric_payload, dict):
+                            continue
+                        metric = _build_metric_contract(metric_payload, owner_model=contract.name, source_file=source_file)
+                        metrics[metric.name] = metric
                 for metric_payload in model.get("metrics", []) or []:
                     if not isinstance(metric_payload, dict):
                         continue
-                    metric = _build_metric_contract(metric_payload, owner_model=semantic_name, source_file=source_file)
+                    metric = _build_metric_contract(metric_payload, owner_model=None, source_file=source_file)
                     metrics[metric.name] = metric
 
-            for metric_payload in payload.get("metrics", []) or []:
-                if not isinstance(metric_payload, dict):
-                    continue
-                metric = _build_metric_contract(metric_payload, owner_model=None, source_file=source_file)
-                metrics[metric.name] = metric
+        except yaml.YAMLError as exc:
+            mark = getattr(exc, "problem_mark", None)
+            line_suffix = f":{mark.line + 1}" if mark is not None else ""
+            message = getattr(exc, "problem", None) or str(exc)
+            raise ValueError(f"Malformed YAML in '{source_file}{line_suffix}': {message}") from exc
 
     return SemanticContract(semantic_models=semantic_models, metrics=metrics)
 
@@ -236,9 +257,17 @@ def _attach_column_semantics(contract: SemanticModelContract, column: dict[str, 
     entity_payload = column.get("entity")
     if isinstance(entity_payload, dict):
         entity_name = entity_payload.get("name") or column_name
+        entity_type = _required_value(
+            entity_payload,
+            key="type",
+            source_file=source_file,
+            kind=f"entity '{entity_name}'",
+            fallback_payload=column,
+            fallback_key="entity",
+        )
         contract.entities[entity_name] = EntityContract(
             name=entity_name,
-            type=entity_payload["type"],
+            type=str(entity_type),
             expr=entity_payload.get("expr") or column_expr,
             source=_source_for_key(column, "entity", source_file, entity_payload),
         )
@@ -246,9 +275,17 @@ def _attach_column_semantics(contract: SemanticModelContract, column: dict[str, 
     dimension_payload = column.get("dimension")
     if isinstance(dimension_payload, dict):
         dimension_name = dimension_payload.get("name") or column_name
+        dimension_type = _required_value(
+            dimension_payload,
+            key="type",
+            source_file=source_file,
+            kind=f"dimension '{dimension_name}'",
+            fallback_payload=column,
+            fallback_key="dimension",
+        )
         contract.dimensions[dimension_name] = DimensionContract(
             name=dimension_name,
-            type=dimension_payload["type"],
+            type=str(dimension_type),
             expr=dimension_payload.get("expr") or column_expr,
             granularity=column.get("granularity"),
             source=_source_for_key(column, "dimension", source_file, dimension_payload),
