@@ -57,16 +57,26 @@ _LineLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _con
 
 def extract_contract_from_yaml_dir(project_dir: str | Path) -> SemanticContract:
     root = Path(project_dir)
+    include_patterns, exclude_patterns = _load_yaml_discovery_filters(root)
+    file_filter = _build_file_filter(include_patterns, exclude_patterns)
     documents = [
         (path.relative_to(root).as_posix(), path.read_text(encoding="utf-8"))
         for path in sorted(root.rglob("*"))
-        if path.is_file() and path.suffix in {".yml", ".yaml"}
+        if path.is_file() and path.suffix in {".yml", ".yaml"} and file_filter(path.relative_to(root).as_posix())
     ]
     return _build_contract_from_yaml_documents(documents)
 
 
 def extract_contract_from_git_ref(project_dir: str | Path, git_ref: str) -> SemanticContract:
-    return _build_contract_from_yaml_documents(load_yaml_documents_from_git_ref(project_dir, git_ref))
+    root = Path(project_dir)
+    include_patterns, exclude_patterns = _load_yaml_discovery_filters(root)
+    return _build_contract_from_yaml_documents(
+        load_yaml_documents_from_git_ref(
+            root,
+            git_ref,
+            file_filter=_build_file_filter(include_patterns, exclude_patterns),
+        )
+    )
 
 
 def extract_contract_from_manifest(manifest_path: str | Path) -> SemanticContract:
