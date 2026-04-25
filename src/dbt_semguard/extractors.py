@@ -69,7 +69,7 @@ def extract_contract_from_yaml_dir(project_dir: str | Path) -> SemanticContract:
 
 def extract_contract_from_git_ref(project_dir: str | Path, git_ref: str) -> SemanticContract:
     root = Path(project_dir)
-    include_patterns, exclude_patterns = _load_yaml_discovery_filters(root)
+    include_patterns, exclude_patterns = _load_yaml_discovery_filters_from_git_ref(root, git_ref)
     return _build_contract_from_yaml_documents(
         load_yaml_documents_from_git_ref(
             root,
@@ -381,23 +381,43 @@ def _error_location(source_file: str | None, payload: dict[str, Any] | None, key
 
 def _load_yaml_discovery_filters(project_dir: Path) -> tuple[tuple[str, ...], tuple[str, ...]]:
     config_path = project_dir / ".semguard.yml"
+    if not config_path.exists():
+        return _DEFAULT_INCLUDE_PATTERNS, _DEFAULT_EXCLUDE_PATTERNS
+
+    return _parse_yaml_discovery_filters(
+        config_path.read_text(encoding="utf-8"),
+        source=str(config_path),
+    )
+
+
+def _load_yaml_discovery_filters_from_git_ref(project_dir: Path, git_ref: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    config_documents = load_yaml_documents_from_git_ref(
+        project_dir,
+        git_ref,
+        file_filter=lambda path: path == ".semguard.yml",
+    )
+    if not config_documents:
+        return _DEFAULT_INCLUDE_PATTERNS, _DEFAULT_EXCLUDE_PATTERNS
+
+    source_path, content = config_documents[0]
+    return _parse_yaml_discovery_filters(content, source=f"{source_path}@{git_ref}")
+
+
+def _parse_yaml_discovery_filters(content: str, source: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
     includes = _DEFAULT_INCLUDE_PATTERNS
     excludes = _DEFAULT_EXCLUDE_PATTERNS
 
-    if not config_path.exists():
-        return includes, excludes
-
     try:
-        config_data = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+        config_data = yaml.safe_load(content)
     except yaml.YAMLError as exc:
         mark = getattr(exc, "problem_mark", None)
         line_suffix = f":{mark.line + 1}" if mark is not None else ""
         message = getattr(exc, "problem", None) or str(exc)
-        raise ValueError(f"Invalid .semguard.yml at '{config_path}{line_suffix}': {message}") from exc
+        raise ValueError(f"Invalid .semguard.yml at '{source}{line_suffix}': {message}") from exc
     if config_data is None:
         return includes, excludes
     if not isinstance(config_data, dict):
-        raise ValueError(f"Invalid .semguard.yml: expected a mapping at '{config_path}'.")
+        raise ValueError(f"Invalid .semguard.yml: expected a mapping at '{source}'.")
 
     includes = _coerce_pattern_list(config_data.get("include"), default=_DEFAULT_INCLUDE_PATTERNS, key="include")
     excludes = _coerce_pattern_list(config_data.get("exclude"), default=_DEFAULT_EXCLUDE_PATTERNS, key="exclude")
