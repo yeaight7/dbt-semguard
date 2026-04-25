@@ -235,7 +235,7 @@ def _build_contract_from_yaml_documents(documents: Iterable[tuple[str, str]]) ->
                             continue
                         metric = _build_metric_contract(metric_payload, owner_model=contract.name, source_file=source_file)
                         metrics[metric.name] = metric
-                for metric_payload in model.get("metrics", []) or []:
+                for metric_payload in payload.get("metrics", []) or []:
                     if not isinstance(metric_payload, dict):
                         continue
                     metric = _build_metric_contract(metric_payload, owner_model=None, source_file=source_file)
