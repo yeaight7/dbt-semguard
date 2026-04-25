@@ -75,9 +75,17 @@ That means the output is focused on semantic drift, not formatting drift.
 
 [//]: # (> It compares the dbt Semantic Layer before and after a PR, strips away cosmetic YAML changes, and highlights only the changes that can affect how downstream users interpret or query a KPI.)
 
-## Install
+## Install From GitHub
 
 ```bash
+python -m pip install "git+https://github.com/yeaight7/dbt-semguard.git@v0.4.0"
+```
+
+## Install From Source
+
+```bash
+git clone https://github.com/yeaight7/dbt-semguard.git
+cd dbt-semguard
 python -m pip install .
 ```
 
@@ -214,19 +222,22 @@ Current automated coverage:
 - CLI `extract`, `diff`, and `check`
 - Sticky PR comment delivery through the GitHub Action
 - Checkout-free git ref mode
-- CI smoke coverage for the published action path in both git-ref and manifest modes, including spaced manifest paths
+- Pre-release local action smoke coverage in CI, plus post-release published action smoke coverage in both git-ref and manifest modes, including spaced manifest paths
 
 ## Current Limitations
 
 Known `v0.4.0` limitations are intentionally narrow:
 
+- There is no `fail-on: none` advisory-only mode yet.
+- There is no allowlist for intentional semantic changes yet.
 - Manifest parsing expects dbt `semantic_manifest.json`, not the general-purpose dbt `manifest.json` artifact.
 - The tool targets the latest Semantic Layer YAML spec only; legacy metric and semantic-model syntax is not included.
 - Rename handling is intentionally conservative: a rename is treated as a removal plus an addition.
 - Source diagnostics are best-effort and currently strongest for YAML extraction; manifest-derived contracts may still lack file/line detail.
 - GitHub integration supports sticky PR comments for pull_request workflows, but does not yet manage review-thread lifecycles or inline annotations.
+- PyPI publishing is not available yet; install from GitHub or source instead.
 
-## GitHub Action
+## Use As A GitHub Action
 
 Use the included composite action from this repository:
 
@@ -234,6 +245,10 @@ Use the included composite action from this repository:
 jobs:
   semguard:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -256,6 +271,14 @@ The action writes:
 - a failing status when the configured threshold is reached
 
 This is the recommended setup when you want the semantic review to happen automatically on every PR.
+
+If you enable `pr-comment: true`, the workflow needs:
+
+- `contents: read`
+- `issues: write`
+- `pull-requests: read`
+
+For forked pull requests, the standard `pull_request` event usually does not get a write-capable `GITHUB_TOKEN`, so sticky PR comments may be unavailable unless you adopt a separate trusted workflow pattern.
 
 ## Migration notes (`v0.4.0`)
 

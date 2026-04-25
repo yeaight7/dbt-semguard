@@ -4,7 +4,7 @@
 
 ### Added
 
-- Added `.semguard.yml` support for YAML discovery `include` and `exclude` rules
+- Added `.semguard.yml` YAML discovery configuration for `include` and `exclude` rules
 - Added default YAML discovery safeguards to focus extraction on semantic directories and skip common non-project paths
 - Added monorepo coverage tests for local YAML mode and checkout-free git ref mode scoped by `--project-dir`
 - Added YAML validation tests for missing required metric/entity/dimension fields and malformed YAML
@@ -13,7 +13,16 @@
 
 - Git ref YAML extraction now scopes file listing to the selected `--project-dir` instead of scanning the full repository tree
 - YAML extraction now raises user-facing validation errors with source-file context instead of surfacing raw `KeyError` exceptions
+- CI now keeps pre-release smoke validation on `uses: ./`, while published-action smoke validation runs separately after release publication or manual dispatch
 - README and usage docs now document monorepo `--project-dir` behavior, `.semguard.yml`, and `v0.4.0` migration notes
+
+### Known limitations
+
+- No `fail-on: none` advisory-only mode yet
+- No allowlist for intentional semantic changes yet
+- No inline PR annotations yet
+- No PyPI publishing yet
+- Manifest mode expects dbt `semantic_manifest.json`, not arbitrary `manifest.json`
 
 ## v0.3.0 - 2026-04-21
 
