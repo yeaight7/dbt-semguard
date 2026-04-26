@@ -43,6 +43,16 @@ At a high level:
 
 It keeps the pieces that affect meaning and ignores cosmetic metadata.
 
+## What v0.5.3 Adds
+
+`v0.5.3` is a release-surface hardening release focused on making the public GitHub Action behavior match the documented interface.
+
+- **PR comments and annotations:** the `pr-comment: true` action path now aligns with the `semguard comment-pr` CLI parser, including `--head-sha` and `--report-json`.
+- **Argument validation:** `semguard comment-pr` now supports PR-comment-only, check-annotation-only, and combined modes, while rejecting incomplete argument pairs with clear configuration errors.
+- **Permission diagnostics:** missing Check Runs API permissions now produce a non-fatal warning instead of silently skipping inline annotations.
+- **Documentation:** PyPI is now documented as the primary install path, with GitHub tag installation kept as the secondary pinning option.
+- **Release safety:** the PyPI publish workflow now runs the test suite before building and publishing distributions.
+
 ## What v0.5.2 Adds
 
 `v0.5.2` is a massive architectural refactor focusing on performance, precision, and deeper platform integration:
