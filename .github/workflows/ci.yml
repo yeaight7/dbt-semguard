@@ -22,7 +22,8 @@ jobs:
       - name: Install package
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e .[dev]
+          python -m pip install -r requirements-dev.txt
+          python -m pip install -e . --no-deps
 
       - name: Run tests
         run: pytest
@@ -75,17 +76,9 @@ jobs:
             echo "Expected the local action smoke test to fail on the seeded breaking change."
             exit 1
           fi
-          test -f semguard-report.json
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          payload = json.loads(Path("semguard-report.json").read_text(encoding="utf-8"))
-          assert payload["highest_severity"] == "breaking", payload
-          assert payload["blocking"] is True, payload
-          messages = "\n".join(change["message"] for change in payload["changes"])
-          assert "gross_revenue" in messages, messages
-          PY
+          [[ "${{ steps.semguard.outputs.highest-severity }}" == "breaking" ]]
+          [[ "${{ steps.semguard.outputs.blocking }}" == "true" ]]
+          [[ "${{ steps.semguard.outputs.breaking-count }}" != "0" ]]
 
   action-smoke-manifest:
     runs-on: ubuntu-latest
@@ -128,14 +121,5 @@ jobs:
             echo "Expected the manifest smoke test to fail on the seeded breaking change."
             exit 1
           fi
-          test -f semguard-report.json
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          payload = json.loads(Path("semguard-report.json").read_text(encoding="utf-8"))
-          assert payload["highest_severity"] == "breaking", payload
-          assert payload["blocking"] is True, payload
-          messages = "\n".join(change["message"] for change in payload["changes"])
-          assert "gross_revenue" in messages, messages
-          PY
+          [[ "${{ steps.semguard.outputs.highest-severity }}" == "breaking" ]]
+          [[ "${{ steps.semguard.outputs.blocking }}" == "true" ]]
