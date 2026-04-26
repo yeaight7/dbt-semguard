@@ -4,10 +4,7 @@ import json
 from collections import OrderedDict
 
 from dbt_semguard.diffing import describe_path_title
-from dbt_semguard.models import ChangeRecord, Report
-
-
-SEVERITY_ORDER = {"safe": 0, "risky": 1, "breaking": 2, "none": -1}
+from dbt_semguard.models import ChangeRecord, Report, Severity, coerce_severity, severity_rank
 
 def build_report(
     changes: list[ChangeRecord],
@@ -17,15 +14,15 @@ def build_report(
 ) -> Report:
     summary = {"breaking": 0, "risky": 0, "safe": 0}
     for change in changes:
-        summary[change.severity] += 1
+        summary[coerce_severity(change.severity).value] += 1
 
-    highest = "safe"
+    highest = Severity.SAFE
     if changes:
-        highest = max(changes, key=lambda item: SEVERITY_ORDER.get(item.severity, 0)).severity
+        highest = max((coerce_severity(change.severity) for change in changes), key=severity_rank)
 
     blocking = False
     if fail_on != "none" and changes:
-        blocking = SEVERITY_ORDER.get(highest, 0) >= SEVERITY_ORDER.get(fail_on, 2)
+        blocking = severity_rank(highest) >= severity_rank(fail_on)
         
     return Report(
         summary=summary,
@@ -54,11 +51,11 @@ def _render_markdown(report: Report) -> str:
         lines.append("Status: passing")
         return "\n".join(lines)
 
-    for severity in ("breaking", "risky", "safe"):
+    for severity in Severity.ordered_desc():
         matching = [change for change in report.changes if change.severity == severity]
         if not matching:
             continue
-        lines.append(f"### {severity.capitalize()} changes")
+        lines.append(f"### {severity.value.capitalize()} changes")
         lines.extend(_render_grouped_changes(matching, heading_level="####"))
         lines.append("")
 
@@ -71,11 +68,11 @@ def _render_text(report: Report) -> str:
     if not report.changes:
         lines.append("No semantic changes detected.")
     else:
-        for severity in ("breaking", "risky", "safe"):
+        for severity in Severity.ordered_desc():
             matching = [change for change in report.changes if change.severity == severity]
             if not matching:
                 continue
-            lines.append(f"{severity.upper()} CHANGES")
+            lines.append(f"{severity.value.upper()} CHANGES")
             lines.extend(_render_grouped_changes(matching, heading_level=None))
             lines.append("")
     lines.append(f"Status: {'blocking' if report.blocking else 'passing'}")
