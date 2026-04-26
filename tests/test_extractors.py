@@ -22,7 +22,8 @@ def test_yaml_extractor_builds_latest_spec_contract():
     assert model.dimensions["ordered_at"].granularity == "day"
     assert model.dimensions["country"].type == "categorical"
     assert contract.metrics["gross_revenue"].agg == "sum"
-    assert contract.metrics["gross_revenue"].filter == "order_status='completed'"    assert contract.metrics["gross_revenue"].owner_model == "orders"
+    assert contract.metrics["gross_revenue"].filter == "order_status='completed'"
+    assert contract.metrics["gross_revenue"].owner_model == "orders"
     assert contract.metrics["aov"].numerator == "gross_revenue"
     assert contract.metrics["aov"].denominator == "order_count"
     assert model.source is not None
