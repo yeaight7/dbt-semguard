@@ -75,13 +75,21 @@ That means the output is focused on semantic drift, not formatting drift.
 
 [//]: # (> It compares the dbt Semantic Layer before and after a PR, strips away cosmetic YAML changes, and highlights only the changes that can affect how downstream users interpret or query a KPI.)
 
+## Install From PyPI
+
+```bash
+python -m pip install dbt-semguard
+```
+
+`dbt-semguard` requires Python 3.11 or newer.
+
 ## Install From GitHub
 
 ```bash
 python -m pip install "git+https://github.com/yeaight7/dbt-semguard.git@v0.5.2"
 ```
 
-`dbt-semguard` requires Python 3.11 or newer.
+Use the GitHub install path when you need to pin directly to a repository tag.
 
 ## Install From Source
 
@@ -276,6 +284,7 @@ jobs:
       contents: read
       issues: write
       pull-requests: read
+      checks: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -316,6 +325,7 @@ The action writes:
 - a JSON artifact named `semguard-report`
 - structured step outputs for severity and counts
 - an optional sticky PR comment when `pr-comment: true`
+- inline check-run annotations when source diagnostics are available
 - a failing status when the configured threshold is reached
 
 When there are zero semantic changes, the Markdown artifact and workflow summary explicitly include `No semantic changes detected.` followed by `Status: passing`.
@@ -327,8 +337,11 @@ If you enable `pr-comment: true`, the workflow needs:
 - `contents: read`
 - `issues: write`
 - `pull-requests: read`
+- `checks: write`
 
-For forked pull requests, the standard `pull_request` event usually does not get a write-capable `GITHUB_TOKEN`, so sticky PR comments may be unavailable unless you adopt a separate trusted workflow pattern.
+Missing `checks: write` can prevent inline annotations and check runs from appearing even when the semantic diff succeeds.
+
+For forked pull requests, the standard `pull_request` event usually does not get a write-capable `GITHUB_TOKEN`, so sticky PR comments and check-run annotations may be unavailable unless you adopt a separate trusted workflow pattern.
 
 ## Troubleshooting
 
