@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security issue in `dbt-semguard`, please use GitHub Security Advisories / private vulnerability reporting as the primary disclosure channel for this repository.
+If you discover a security issue in `dbt-semguard`, please use GitHub Security Advisories/private vulnerability reporting as the primary disclosure channel for this repository.
 
 If GitHub private reporting is unavailable for your report, contact `rivero4javier@outlook.es` and include:
 

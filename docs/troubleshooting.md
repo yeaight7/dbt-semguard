@@ -2,7 +2,7 @@
 
 ## Git ref mode fails on CI
 
-If `--base-ref` / `--head-ref` comparisons fail in GitHub Actions, check that the repository was fetched with enough history.
+If `--base-ref`/`--head-ref` comparisons fail in GitHub Actions, check that the repository was fetched with enough history.
 
 Recommended checkout settings:
 
