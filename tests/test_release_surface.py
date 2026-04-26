@@ -287,11 +287,14 @@ def test_readme_uses_marketplace_action_ref_and_relative_links():
     assert "(examples/ecommerce_dbt_project)" in readme
 
 
-def test_pyproject_includes_v053_packaging_metadata():
-    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+def test_pyproject_includes_packaging_metadata_and_dynamic_version():
+    pyproject = load_pyproject()
     project = pyproject["project"]
 
-    assert project["version"] == "0.5.3"
+    assert "version" not in project
+    assert "version" in project["dynamic"]
+    assert pyproject["tool"]["hatch"]["version"]["path"] == "src/dbt_semguard/__init__.py"
+
     assert project["authors"] == [{"name": "yeaight7", "email": "rivero4javier@outlook.es"}]
     assert "keywords" in project
     assert {"dbt", "semantic-layer", "metrics", "github-actions"}.issubset(set(project["keywords"]))
@@ -303,13 +306,14 @@ def test_pyproject_includes_v053_packaging_metadata():
     assert project["urls"]["Issues"] == "https://github.com/yeaight7/dbt-semguard/issues"
     assert project["urls"]["Changelog"] == "https://github.com/yeaight7/dbt-semguard/blob/main/CHANGELOG.md"
     assert project["urls"]["Documentation"] == "https://github.com/yeaight7/dbt-semguard#readme"
+
     requirements_dev = (ROOT / "requirements-dev.txt").read_text(encoding="utf-8")
     assert "PyYAML==" in requirements_dev
     assert "pytest==" in requirements_dev
 
 
 def test_version_references_are_consistent_across_release_surface():
-    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    pyproject = load_pyproject()
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
     version = pyproject["project"]["version"]
