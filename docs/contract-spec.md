@@ -79,17 +79,16 @@ Contracts may also include optional `source` diagnostics on semantic models, ent
 - Tags and arbitrary metadata
 - File paths and line numbers
 
-## Supported inputs in v0.3
+## Supported inputs
 
-- Latest dbt Semantic Layer YAML spec
+- Latest dbt Semantic Layer YAML spec (nested under `models` and `columns`)
+- Legacy dbt Semantic Layer YAML spec (top-level `semantic_models` and `metrics`)
 - Explicit dbt `semantic_manifest.json` input
 - Canonical contract JSON emitted by `semguard extract`
 
 ## Notes
 
-- `v0.3` does not infer renames.
+- Rename inference is intentionally conservative and treated as a removal plus an addition.
 - YAML extraction can emit `source.file` and `source.line` diagnostics; manifest inputs may not.
-- YAML extraction supports both dbt specs documented on April 23, 2026:
-  - latest spec: `semantic_model` lives under `models`, entities/dimensions live under `columns`, and simple metrics live within the model
-  - legacy spec: top-level `semantic_models`, `measures`, and `type_params` are normalized into the same contract shape
-  - advanced metric families include ratio, derived, cumulative, and conversion
+- Both YAML specs are normalized into the same canonical contract shape. `measures` from the legacy spec or MetricFlow are flattened into `simple` metrics within the contract to preserve backwards compatibility in the diff engine.
+- Advanced metric families include ratio, derived, cumulative, and conversion.
