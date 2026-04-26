@@ -2,10 +2,42 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass, field
+from enum import StrEnum
 from pathlib import Path
 from typing import Any, TypeVar
 
 T = TypeVar("T")
+
+
+class Severity(StrEnum):
+    SAFE = "safe"
+    RISKY = "risky"
+    BREAKING = "breaking"
+
+    @classmethod
+    def ordered_desc(cls) -> tuple[Severity, ...]:
+        return (cls.BREAKING, cls.RISKY, cls.SAFE)
+
+
+SEVERITY_ORDER = {
+    Severity.SAFE: 0,
+    Severity.RISKY: 1,
+    Severity.BREAKING: 2,
+}
+FAIL_ON_VALUES = tuple(severity.value for severity in Severity.ordered_desc()) + ("none",)
+
+
+def coerce_severity(value: Severity | str) -> Severity:
+    if isinstance(value, Severity):
+        return value
+    try:
+        return Severity(value)
+    except ValueError as exc:
+        raise ValueError(f"Unknown severity '{value}'. Expected one of: breaking, risky, safe.") from exc
+
+
+def severity_rank(value: Severity | str) -> int:
+    return SEVERITY_ORDER[coerce_severity(value)]
 
 
 def _strip_diagnostics(value: Any) -> Any:
@@ -216,7 +248,7 @@ class SemanticContract(SemanticComparableModel):
 @dataclass(eq=False)
 class ChangeRecord:
     code: str
-    severity: str
+    severity: Severity | str
     message: str
     path: str
     before: Any = None
@@ -224,13 +256,15 @@ class ChangeRecord:
     source: SourceLocation | None = None
     
     def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
-        return _strip_null_sources(asdict(self))
+        data = _strip_null_sources(asdict(self))
+        data["severity"] = coerce_severity(self.severity).value
+        return data
 
 
 @dataclass(eq=False)
 class Report:
     summary: dict[str, int]
-    highest_severity: str
+    highest_severity: Severity | str
     blocking: bool
     changes: list[ChangeRecord]
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -238,7 +272,7 @@ class Report:
     def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         return {
             "summary": self.summary,
-            "highest_severity": self.highest_severity,
+            "highest_severity": coerce_severity(self.highest_severity).value,
             "blocking": self.blocking,
             "changes": [c.model_dump() for c in self.changes],
             "metadata": self.metadata,
