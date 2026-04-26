@@ -15,6 +15,11 @@ These fail `semguard check` by default.
 - `dimension.removed`
 - `dimension.type_changed`
 - `dimension.expr_changed`
+- `dimension.granularity_changed` when the new grain is coarser and loses detail, including sub-day grains such as `hour` to `day`
+- `measure.removed`
+- `measure.agg_changed`
+- `measure.expr_changed`
+- `measure.non_additive_dimension_changed`
 - `metric.removed`
 - `metric.type_changed`
 - `metric.simple.agg_changed`
@@ -39,7 +44,9 @@ These warn by default and become blocking only if `--fail-on risky` or `--fail-o
 - `semantic_model.agg_time_dimension_changed`
 - `entity.added`
 - `dimension.added`
-- `dimension.granularity_changed`
+- `dimension.granularity_changed` when the new grain is finer or unknown
+- `measure.added`
+- `measure.agg_time_dimension_changed`
 - `metric.added`
 - `metric.filter_changed`
 - `metric.label_changed`
