@@ -8,8 +8,10 @@ from dbt_semguard.github import (
     GitHubPermissionError,
     GitHubRequestError,
     PR_COMMENT_MARKER,
+    create_check_run_annotations,
     upsert_pr_comment,
 )
+from dbt_semguard.models import ChangeRecord, Report, SourceLocation
 
 
 def test_upsert_pr_comment_updates_existing_marker_comment():
@@ -63,6 +65,43 @@ def test_upsert_pr_comment_creates_new_comment_when_missing_marker():
     assert calls[0][0] == "GET"
     assert calls[1][0] == "POST"
     assert PR_COMMENT_MARKER in calls[1][2]["body"]
+
+
+def test_create_check_run_annotations_warns_and_continues_on_permission_error(capsys: pytest.CaptureFixture[str]):
+    calls: list[tuple[str, str, dict | None]] = []
+
+    def fake_request(method: str, url: str, token: str, payload: dict | None = None):
+        calls.append((method, url, payload))
+        raise GitHubPermissionError(403, "Resource not accessible by integration")
+
+    report = Report(
+        summary={"breaking": 1, "risky": 0, "safe": 0},
+        highest_severity="breaking",
+        blocking=True,
+        changes=[
+            ChangeRecord(
+                code="metric_removed",
+                severity="breaking",
+                message="Metric `gross_revenue` was removed.",
+                path="metrics.gross_revenue",
+                source=SourceLocation(file="models/orders.yml", line=21),
+            )
+        ],
+    )
+
+    create_check_run_annotations(
+        repo="yeaight7/dbt-semguard",
+        head_sha="abc123",
+        token="token",
+        report=report,
+        request=fake_request,
+    )
+
+    captured = capsys.readouterr()
+
+    assert calls[0][0] == "POST"
+    assert "skipping check run annotations" in captured.err
+    assert "403" in captured.err
 
 
 def test_request_json_raises_permission_error_for_403(monkeypatch: pytest.MonkeyPatch):
