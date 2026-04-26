@@ -13,7 +13,7 @@ from dbt_semguard.extractors import (
     extract_contract_from_yaml_dir,
 )
 from dbt_semguard.github import GitHubPermissionError, upsert_pr_comment
-from dbt_semguard.models import SemanticContract
+from dbt_semguard.models import FAIL_ON_VALUES, SemanticContract
 from dbt_semguard.reporting import build_report, render_report
 
 
@@ -66,7 +66,7 @@ def _build_parser() -> argparse.ArgumentParser:
         compare_parser.add_argument("--base-manifest")
         compare_parser.add_argument("--head-manifest")
         compare_parser.add_argument("--format", choices=["text", "markdown", "json"], default="text")
-        compare_parser.add_argument("--fail-on", choices=["safe", "risky", "breaking", "none"], default="breaking")
+        compare_parser.add_argument("--fail-on", choices=FAIL_ON_VALUES, default="breaking")
 
     return parser
 
