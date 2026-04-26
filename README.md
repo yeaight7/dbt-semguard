@@ -78,7 +78,7 @@ That means the output is focused on semantic drift, not formatting drift.
 ## Install From GitHub
 
 ```bash
-python -m pip install "git+https://github.com/yeaight7/dbt-semguard.git@v0.4.0"
+python -m pip install "git+https://github.com/yeaight7/dbt-semguard.git@v0.5.0"
 ```
 
 ## Install From Source
@@ -227,7 +227,7 @@ Current automated coverage:
 
 ## Current Limitations
 
-Known `v0.4.0` limitations are intentionally narrow:
+Known `v0.5.0` limitations are intentionally narrow:
 
 - There is no `fail-on: none` advisory-only mode yet.
 - There is no allowlist for intentional semantic changes yet.
@@ -255,19 +255,34 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: yeaight7/dbt-semguard@v0.4.0
+      - uses: yeaight7/dbt-semguard@v0.5.0
+        id: semguard
         with:
           base-ref: ${{ github.event.pull_request.base.sha }}
           head-ref: ${{ github.sha }}
           fail-on: breaking
           pr-comment: true
           github-token: ${{ github.token }}
+
+      - name: Inspect semguard outputs
+        run: |
+          echo "Highest severity: ${{ steps.semguard.outputs.highest-severity }}"
+          echo "Blocking: ${{ steps.semguard.outputs.blocking }}"
 ```
+
+The action now exposes structured outputs so downstream CI can branch on semantic severity without reparsing JSON:
+
+- `steps.semguard.outputs.highest-severity`
+- `steps.semguard.outputs.blocking`
+- `steps.semguard.outputs.breaking-count`
+- `steps.semguard.outputs.risky-count`
+- `steps.semguard.outputs.safe-count`
 
 The action writes:
 
 - a Markdown summary to the workflow summary
 - a JSON artifact named `semguard-report`
+- structured step outputs for severity and counts
 - an optional sticky PR comment when `pr-comment: true`
 - a failing status when the configured threshold is reached
 
@@ -281,12 +296,14 @@ If you enable `pr-comment: true`, the workflow needs:
 
 For forked pull requests, the standard `pull_request` event usually does not get a write-capable `GITHUB_TOKEN`, so sticky PR comments may be unavailable unless you adopt a separate trusted workflow pattern.
 
-## Migration notes (`v0.4.0`)
+## Migration notes (`v0.5.0`)
 
 - Git ref extraction now scopes strictly to `--project-dir` for monorepos.
 - YAML discovery now uses safe default include/exclude patterns.
 - Optional `.semguard.yml` include/exclude rules are applied in both local and git-ref YAML extraction.
 - Invalid semantic YAML now raises user-facing errors with source context instead of raw `KeyError` tracebacks.
+- Composite action shell steps now read user-controlled values from environment variables instead of embedding GitHub expressions directly in Bash.
+- Composite action now generates JSON, Markdown, summary text, and step outputs in a single pass before enforcing the blocking threshold.
 
 ## Example project
 

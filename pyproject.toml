@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dbt-semguard"
-version = "0.4.0"
+version = "0.5.0"
 description = "Catch semantic breaking changes in dbt metrics before they land in production."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -12,10 +12,26 @@ license = { text = "MIT" }
 authors = [
   { name = "yeaight7" }
 ]
+keywords = ["dbt", "semantic-layer", "metrics", "github-actions", "data-quality"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Quality Assurance",
+]
 dependencies = [
   "pydantic>=2.8,<3",
   "PyYAML>=6.0,<7",
 ]
+
+[project.urls]
+Repository = "https://github.com/yeaight7/dbt-semguard"
+Issues = "https://github.com/yeaight7/dbt-semguard/issues"
+Changelog = "https://github.com/yeaight7/dbt-semguard/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/yeaight7/dbt-semguard#readme"
 
 [project.optional-dependencies]
 dev = [

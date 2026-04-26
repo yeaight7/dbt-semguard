@@ -39,6 +39,23 @@ inputs:
     description: Name for the uploaded JSON artifact
     default: "semguard-report"
 
+outputs:
+  highest-severity:
+    description: Highest severity detected in the generated report
+    value: ${{ steps.generate.outputs.highest-severity }}
+  blocking:
+    description: Whether the configured fail-on threshold was reached
+    value: ${{ steps.generate.outputs.blocking }}
+  breaking-count:
+    description: Number of breaking changes in the report
+    value: ${{ steps.generate.outputs.breaking-count }}
+  risky-count:
+    description: Number of risky changes in the report
+    value: ${{ steps.generate.outputs.risky-count }}
+  safe-count:
+    description: Number of safe changes in the report
+    value: ${{ steps.generate.outputs.safe-count }}
+
 runs:
   using: composite
   steps:
@@ -48,56 +65,65 @@ runs:
 
     - name: Install dbt-semguard
       shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
       run: |
         VENV_DIR="$RUNNER_TEMP/dbt-semguard-venv"
         python -m venv "$VENV_DIR"
         "$VENV_DIR/bin/python" -m pip install --upgrade pip
-        "$VENV_DIR/bin/python" -m pip install "${{ github.action_path }}"
+        "$VENV_DIR/bin/python" -m pip install "$ACTION_PATH"
         echo "$VENV_DIR/bin" >> "$GITHUB_PATH"
 
     - name: Generate dbt-semguard report
+      id: generate
       shell: bash
+      env:
+        BASE_REF: ${{ inputs.base-ref }}
+        HEAD_REF: ${{ inputs.head-ref }}
+        PROJECT_DIR: ${{ inputs.project-dir }}
+        BASE_MANIFEST: ${{ inputs.base-manifest }}
+        HEAD_MANIFEST: ${{ inputs.head-manifest }}
+        FAIL_ON: ${{ inputs.fail-on }}
       run: |
-        if [[ -n "${{ inputs.base-manifest }}" || -n "${{ inputs.head-manifest }}" ]]; then
-          semguard diff --base-manifest "${{ inputs.base-manifest }}" --head-manifest "${{ inputs.head-manifest }}" --format json > semguard-report.json
-          semguard diff --base-manifest "${{ inputs.base-manifest }}" --head-manifest "${{ inputs.head-manifest }}" --format markdown > semguard-report.md
-          cat semguard-report.md >> "$GITHUB_STEP_SUMMARY"
-        else
-          semguard diff --base-ref "${{ inputs.base-ref }}" --head-ref "${{ inputs.head-ref }}" --project-dir "${{ inputs.project-dir }}" --format json > semguard-report.json
-          semguard diff --base-ref "${{ inputs.base-ref }}" --head-ref "${{ inputs.head-ref }}" --project-dir "${{ inputs.project-dir }}" --format markdown > semguard-report.md
-          cat semguard-report.md >> "$GITHUB_STEP_SUMMARY"
-        fi
+        python -m dbt_semguard.action_runner
 
     - name: Publish PR comment
       if: ${{ inputs.pr-comment == 'true' }}
       shell: bash
       env:
         SEMGUARD_GITHUB_TOKEN: ${{ inputs.github-token }}
+        REPOSITORY: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_COMMENT_MODE: ${{ inputs.pr-comment-mode }}
       run: |
-        if [[ -z "${{ inputs.github-token }}" ]]; then
+        if [[ -z "$SEMGUARD_GITHUB_TOKEN" ]]; then
           echo "dbt-semguard: skipping PR comment because github-token was not provided."
           exit 0
         fi
-        if [[ -z "${{ github.event.pull_request.number }}" ]]; then
+        if [[ -z "$PR_NUMBER" ]]; then
           echo "dbt-semguard: skipping PR comment because this run is not attached to a pull request."
           exit 0
         fi
         semguard comment-pr \
           --body-file semguard-report.md \
-          --repo "${{ github.repository }}" \
-          --pr-number "${{ github.event.pull_request.number }}" \
-          --mode "${{ inputs.pr-comment-mode }}"
+          --repo "$REPOSITORY" \
+          --pr-number "$PR_NUMBER" \
+          --mode "$PR_COMMENT_MODE"
 
     - name: Enforce severity threshold
       shell: bash
+      env:
+        BLOCKING: ${{ steps.generate.outputs.blocking }}
+        HIGHEST_SEVERITY: ${{ steps.generate.outputs.highest-severity }}
       run: |
-        if [[ -n "${{ inputs.base-manifest }}" || -n "${{ inputs.head-manifest }}" ]]; then
-          semguard check --base-manifest "${{ inputs.base-manifest }}" --head-manifest "${{ inputs.head-manifest }}" --fail-on "${{ inputs.fail-on }}"
-        else
-          semguard check --base-ref "${{ inputs.base-ref }}" --head-ref "${{ inputs.head-ref }}" --project-dir "${{ inputs.project-dir }}" --fail-on "${{ inputs.fail-on }}"
+        if [[ "$BLOCKING" == "true" ]]; then
+          echo "dbt-semguard: blocking due to highest severity '$HIGHEST_SEVERITY'."
+          exit 1
         fi
 
     - uses: actions/upload-artifact@v4
+      if: always()
       with:
         name: ${{ inputs.artifact-name }}
         path: semguard-report.json
+        if-no-files-found: warn

@@ -1,4 +1,5 @@
 from pathlib import Path
+import tomllib
 
 import yaml
 
@@ -10,15 +11,23 @@ def load_workflow(name: str) -> dict:
     return yaml.safe_load((ROOT / ".github" / "workflows" / name).read_text(encoding="utf-8"))
 
 
+def load_action() -> dict:
+    return yaml.safe_load((ROOT / "action.yml").read_text(encoding="utf-8"))
+
+
+def action_steps() -> list[dict]:
+    return load_action()["runs"]["steps"]
+
+
 def test_action_installs_from_action_path_and_has_branding():
-    action = yaml.safe_load((ROOT / "action.yml").read_text(encoding="utf-8"))
+    action = load_action()
 
     assert action["branding"] == {"icon": "shield", "color": "blue"}
     install_step = next(step for step in action["runs"]["steps"] if step.get("name") == "Install dbt-semguard")
     assert "python -m venv" in install_step["run"]
-    assert '${{ github.action_path }}' in install_step["run"]
     assert "GITHUB_PATH" in install_step["run"]
-    assert 'python -m pip install "${{ github.action_path }}"' not in install_step["run"]
+    assert install_step["env"]["ACTION_PATH"] == "${{ github.action_path }}"
+    assert '"$ACTION_PATH"' in install_step["run"]
 
 
 def test_action_invokes_semguard_without_eval_or_serialized_shell_args():
@@ -26,12 +35,44 @@ def test_action_invokes_semguard_without_eval_or_serialized_shell_args():
 
     assert "eval " not in action_text
     assert "diff_args=" not in action_text
-    assert "semguard diff --base-ref" in action_text
-    assert "semguard diff --base-manifest" in action_text
-    assert "semguard check --base-ref" in action_text
-    assert "semguard check --base-manifest" in action_text
+    assert "python -m dbt_semguard.action_runner" in action_text
     assert "semguard comment-pr" in action_text
     assert "--github-token" not in action_text
+
+
+def test_action_defines_structured_outputs_for_ci_consumers():
+    action = load_action()
+
+    assert action["outputs"]["highest-severity"]["description"]
+    assert action["outputs"]["highest-severity"]["value"] == "${{ steps.generate.outputs.highest-severity }}"
+    assert action["outputs"]["blocking"]["value"] == "${{ steps.generate.outputs.blocking }}"
+    assert action["outputs"]["breaking-count"]["value"] == "${{ steps.generate.outputs.breaking-count }}"
+    assert action["outputs"]["risky-count"]["value"] == "${{ steps.generate.outputs.risky-count }}"
+    assert action["outputs"]["safe-count"]["value"] == "${{ steps.generate.outputs.safe-count }}"
+
+
+def test_action_run_scripts_do_not_embed_github_expressions():
+    for step in action_steps():
+        run = step.get("run")
+        if not isinstance(run, str):
+            continue
+        assert "${{ inputs." not in run, step.get("name")
+        assert "${{ github." not in run, step.get("name")
+
+
+def test_action_upload_artifact_always_runs():
+    upload_step = next(step for step in action_steps() if step.get("uses") == "actions/upload-artifact@v4")
+
+    assert upload_step["if"] == "always()"
+
+
+def test_action_generate_step_is_single_pass_and_sets_outputs():
+    generate_step = next(step for step in action_steps() if step.get("id") == "generate")
+    run = generate_step["run"]
+
+    assert "semguard diff" not in run
+    assert "semguard check" not in run
+    assert "python -m dbt_semguard.action_runner" in run
 
 
 def test_ci_workflow_uses_only_local_action_smoke_jobs():
@@ -140,8 +181,26 @@ def test_action_exposes_pr_comment_input():
 def test_readme_uses_marketplace_action_ref_and_relative_links():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
-    assert "- uses: yeaight7/dbt-semguard@v0.4.0" in readme
+    assert "- uses: yeaight7/dbt-semguard@v0.5.0" in readme
     assert "uses: ./" not in readme
     assert "C:/Users/Rivero/" not in readme
     assert "(docs/contract-spec.md)" in readme
     assert "(examples/ecommerce_dbt_project)" in readme
+
+
+def test_pyproject_includes_v050_packaging_metadata():
+    pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    project = pyproject["project"]
+
+    assert project["version"] == "0.5.0"
+    assert project["authors"] == [{"name": "yeaight7"}]
+    assert "keywords" in project
+    assert {"dbt", "semantic-layer", "metrics", "github-actions"}.issubset(set(project["keywords"]))
+    assert "classifiers" in project
+    assert "License :: OSI Approved :: MIT License" in project["classifiers"]
+    assert "Programming Language :: Python :: 3" in project["classifiers"]
+    assert "Topic :: Software Development :: Quality Assurance" in project["classifiers"]
+    assert project["urls"]["Repository"] == "https://github.com/yeaight7/dbt-semguard"
+    assert project["urls"]["Issues"] == "https://github.com/yeaight7/dbt-semguard/issues"
+    assert project["urls"]["Changelog"] == "https://github.com/yeaight7/dbt-semguard/blob/main/CHANGELOG.md"
+    assert project["urls"]["Documentation"] == "https://github.com/yeaight7/dbt-semguard#readme"

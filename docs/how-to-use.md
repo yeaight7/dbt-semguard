@@ -43,14 +43,14 @@ At a high level:
 
 It keeps the pieces that affect meaning and ignores cosmetic metadata.
 
-## What v0.4.0 Adds
+## What v0.5.0 Adds
 
-`v0.4.0` focuses on analysis-scope correctness and parser robustness:
+`v0.5.0` focuses on safer CI execution and better action ergonomics:
 
-- strict monorepo scoping for `--project-dir` in git ref mode
-- safe default include/exclude YAML discovery patterns
-- optional `.semguard.yml` include/exclude overrides
-- clearer YAML extraction errors with file/line context for invalid semantic payloads
+- env-only composite action shell wiring for user-controlled inputs
+- single-pass action report generation with structured outputs
+- artifact upload behavior that stays informative even after earlier failures
+- packaging metadata improvements for open-source distribution credibility
 
 ## When To Use Which Command
 

@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.5.0 - 2026-04-26
+
+### Added
+
+- Added a dedicated internal action runner that generates JSON, Markdown, workflow summary text, and structured action outputs in one pass
+- Added composite action outputs for `highest-severity`, `blocking`, `breaking-count`, `risky-count`, and `safe-count`
+- Added packaging metadata in `pyproject.toml`, including classifiers, keywords, and project URLs
+
+### Changed
+
+- Hardened `action.yml` against shell injection by mapping GitHub expressions into `env:` and consuming only native shell variables inside `run:` blocks
+- Artifact upload now runs with `if: always()` and warns instead of failing when report files are unavailable after an earlier error
+- README and usage docs now target `v0.5.0` and document action outputs for downstream CI consumers
+
+### Security and reliability
+
+- Fixed the remaining composite action shell injection risk caused by embedding `${{ inputs.* }}` and `${{ github.* }}` directly inside Bash scripts
+- Preserved report artifacts and action outputs for blocking semantic diffs before the enforcement step fails the job
+
 ## v0.4.0 - 2026-04-24
 
 ### Added
