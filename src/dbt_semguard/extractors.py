@@ -763,8 +763,87 @@ def _normalize_filter_value(value: Any) -> str | None:
     if raw_str is None:
         return None
         
-    normalized = " ".join(raw_str.split()).lower().replace('"', "'")
-    return normalized.replace(" = ", "=").replace(" > ", ">").replace(" < ", "<")
+    normalized = _collapse_unquoted_whitespace(raw_str)
+    return _strip_unquoted_operator_spacing(normalized)
+
+
+def _collapse_unquoted_whitespace(value: str) -> str:
+    result: list[str] = []
+    quote: str | None = None
+    pending_space = False
+    index = 0
+    text = value.strip()
+
+    while index < len(text):
+        char = text[index]
+        if quote:
+            result.append(char)
+            if char == quote:
+                if index + 1 < len(text) and text[index + 1] == quote:
+                    result.append(text[index + 1])
+                    index += 2
+                    continue
+                quote = None
+            index += 1
+            continue
+
+        if char in {"'", '"'}:
+            if pending_space and result:
+                result.append(" ")
+            pending_space = False
+            quote = char
+            result.append(char)
+        elif char.isspace():
+            pending_space = True
+        else:
+            if pending_space and result:
+                result.append(" ")
+            pending_space = False
+            result.append(char)
+        index += 1
+
+    return "".join(result).strip()
+
+
+def _strip_unquoted_operator_spacing(value: str) -> str:
+    result: list[str] = []
+    quote: str | None = None
+    operators = (">=", "<=", "!=", "<>", "=", ">", "<")
+    index = 0
+
+    while index < len(value):
+        char = value[index]
+        if quote:
+            result.append(char)
+            if char == quote:
+                if index + 1 < len(value) and value[index + 1] == quote:
+                    result.append(value[index + 1])
+                    index += 2
+                    continue
+                quote = None
+            index += 1
+            continue
+
+        if char in {"'", '"'}:
+            quote = char
+            result.append(char)
+            index += 1
+            continue
+
+        operator = next((candidate for candidate in operators if value.startswith(candidate, index)), None)
+        if operator is not None:
+            while result and result[-1] == " ":
+                result.pop()
+            result.append(operator)
+            index += len(operator)
+            while index < len(value) and value[index] == " ":
+                index += 1
+            continue
+
+        result.append(char)
+        index += 1
+
+    return "".join(result).strip()
 
 
 def _mapping_values(value: Any) -> list[dict[str, Any]]:
