@@ -29,7 +29,7 @@ def _strip_null_sources(value: Any) -> Any:
     return value
 
 
-@dataclass
+@dataclass(eq=False)
 class SemanticComparableModel:
     def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         return _strip_null_sources(asdict(self))
@@ -46,7 +46,7 @@ class SemanticComparableModel:
         return NotImplemented
 
 
-@dataclass
+@dataclass(eq=False)
 class SourceLocation:
     file: str
     line: int
@@ -62,7 +62,7 @@ class SourceLocation:
         return cls(**data)
 
 
-@dataclass
+@dataclass(eq=False)
 class EntityContract(SemanticComparableModel):
     name: str
     type: str
@@ -79,7 +79,7 @@ class EntityContract(SemanticComparableModel):
         )
 
 
-@dataclass
+@dataclass(eq=False)
 class DimensionContract(SemanticComparableModel):
     name: str
     type: str
@@ -98,7 +98,7 @@ class DimensionContract(SemanticComparableModel):
         )
 
 
-@dataclass
+@dataclass(eq=False)
 class MeasureContract(SemanticComparableModel):
     name: str
     agg: str | None = None
@@ -119,7 +119,7 @@ class MeasureContract(SemanticComparableModel):
         )
 
 
-@dataclass
+@dataclass(eq=False)
 class MetricContract(SemanticComparableModel):
     name: str
     metric_type: str
@@ -172,7 +172,7 @@ class MetricContract(SemanticComparableModel):
         )
 
 
-@dataclass
+@dataclass(eq=False)
 class SemanticModelContract(SemanticComparableModel):
     name: str
     model_name: str
@@ -195,7 +195,7 @@ class SemanticModelContract(SemanticComparableModel):
         )
 
 
-@dataclass
+@dataclass(eq=False)
 class SemanticContract(SemanticComparableModel):
     semantic_models: dict[str, SemanticModelContract] = field(default_factory=dict)
     metrics: dict[str, MetricContract] = field(default_factory=dict)
@@ -213,7 +213,7 @@ class SemanticContract(SemanticComparableModel):
         )
 
 
-@dataclass
+@dataclass(eq=False)
 class ChangeRecord:
     code: str
     severity: str
@@ -227,7 +227,7 @@ class ChangeRecord:
         return _strip_null_sources(asdict(self))
 
 
-@dataclass
+@dataclass(eq=False)
 class Report:
     summary: dict[str, int]
     highest_severity: str
