@@ -234,7 +234,7 @@ def test_action_exposes_pr_comment_input():
 def test_readme_uses_marketplace_action_ref_and_relative_links():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
-    assert "- uses: yeaight7/dbt-semguard@v0.5.1" in readme
+    assert "- uses: yeaight7/dbt-semguard@v0.5.2" in readme
     assert "uses: ./" not in readme
     assert "C:/Users/Rivero/" not in readme
     assert "(docs/contract-spec.md)" in readme
@@ -245,7 +245,7 @@ def test_pyproject_includes_v051_packaging_metadata():
     pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     project = pyproject["project"]
 
-    assert project["version"] == "0.5.1"
+    assert project["version"] == "0.5.2"
     assert project["authors"] == [{"name": "yeaight7", "email": "rivero4javier@outlook.es"}]
     assert "keywords" in project
     assert {"dbt", "semantic-layer", "metrics", "github-actions"}.issubset(set(project["keywords"]))
