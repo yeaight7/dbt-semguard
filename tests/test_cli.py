@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from dbt_semguard import github as github_module
 from dbt_semguard import cli as cli_module
 from dbt_semguard.github import GitHubPermissionError, GitHubRequestError
 
@@ -19,6 +20,29 @@ def run_cli(*args: str, cwd: Path | None = None) -> subprocess.CompletedProcess[
 
 def run(command: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(command, cwd=cwd, check=True, capture_output=True, text=True)
+
+
+def write_report_json(path: Path) -> None:
+    path.write_text(
+        json.dumps(
+            {
+                "summary": {"breaking": 1, "risky": 0, "safe": 0},
+                "highest_severity": "breaking",
+                "blocking": True,
+                "changes": [
+                    {
+                        "code": "metric_removed",
+                        "severity": "breaking",
+                        "message": "Metric `gross_revenue` was removed.",
+                        "path": "metrics.gross_revenue",
+                        "source": {"file": "models/orders.yml", "line": 21},
+                    }
+                ],
+                "metadata": {"source_mode": "git"},
+            }
+        ),
+        encoding="utf-8",
+    )
 
 
 def test_extract_command_writes_contract_json(tmp_path: Path):
@@ -192,6 +216,117 @@ def test_comment_pr_falls_back_to_github_token_environment(monkeypatch: pytest.M
 
     assert result == 0
     assert captured["token"] == "github-env-token"
+
+
+def test_comment_pr_accepts_action_annotation_arguments_only(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    report_json = tmp_path / "report.json"
+    write_report_json(report_json)
+    captured: dict[str, object] = {}
+
+    def fake_create_check_run_annotations(**kwargs):
+        captured.update(kwargs)
+
+    monkeypatch.setenv("SEMGUARD_GITHUB_TOKEN", "semguard-env-token")
+    monkeypatch.setattr(github_module, "create_check_run_annotations", fake_create_check_run_annotations)
+
+    result = cli_module.main(
+        [
+            "comment-pr",
+            "--repo",
+            "OWNER/REPO",
+            "--head-sha",
+            "SHA",
+            "--report-json",
+            str(report_json),
+            "--mode",
+            "sticky",
+        ]
+    )
+
+    assert result == 0
+    assert captured["repo"] == "OWNER/REPO"
+    assert captured["head_sha"] == "SHA"
+    assert captured["token"] == "semguard-env-token"
+    assert captured["report"].changes[0].source.file == "models/orders.yml"
+
+
+def test_comment_pr_accepts_action_comment_and_annotation_arguments(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    body_file = tmp_path / "body.md"
+    body_file.write_text("hello", encoding="utf-8")
+    report_json = tmp_path / "report.json"
+    write_report_json(report_json)
+    comment_call: dict[str, object] = {}
+    annotation_call: dict[str, object] = {}
+
+    def fake_upsert_pr_comment(**kwargs):
+        comment_call.update(kwargs)
+        return "created"
+
+    def fake_create_check_run_annotations(**kwargs):
+        annotation_call.update(kwargs)
+
+    monkeypatch.setenv("SEMGUARD_GITHUB_TOKEN", "semguard-env-token")
+    monkeypatch.setattr(cli_module, "upsert_pr_comment", fake_upsert_pr_comment)
+    monkeypatch.setattr(github_module, "create_check_run_annotations", fake_create_check_run_annotations)
+
+    result = cli_module.main(
+        [
+            "comment-pr",
+            "--body-file",
+            str(body_file),
+            "--repo",
+            "OWNER/REPO",
+            "--pr-number",
+            "12",
+            "--head-sha",
+            "SHA",
+            "--report-json",
+            str(report_json),
+            "--mode",
+            "sticky",
+        ]
+    )
+
+    assert result == 0
+    assert comment_call["pull_request_number"] == 12
+    assert comment_call["body"] == "hello"
+    assert annotation_call["head_sha"] == "SHA"
+
+
+@pytest.mark.parametrize(
+    ("extra_args", "message"),
+    [
+        ([], "Provide PR comment inputs, annotation inputs, or both."),
+        (["--pr-number", "12"], "--pr-number requires --body-file."),
+        (["--body-file", "body.md"], "--body-file requires --pr-number."),
+        (["--head-sha", "SHA"], "--head-sha requires --report-json."),
+        (["--report-json", "report.json"], "--report-json requires --head-sha."),
+    ],
+)
+def test_comment_pr_rejects_invalid_partial_argument_combinations(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    extra_args: list[str],
+    message: str,
+):
+    body_file = tmp_path / "body.md"
+    body_file.write_text("hello", encoding="utf-8")
+    report_json = tmp_path / "report.json"
+    write_report_json(report_json)
+
+    resolved_args = [
+        str(body_file) if arg == "body.md" else str(report_json) if arg == "report.json" else arg for arg in extra_args
+    ]
+
+    monkeypatch.setenv("SEMGUARD_GITHUB_TOKEN", "semguard-env-token")
+
+    result = cli_module.main(["comment-pr", "--repo", "OWNER/REPO", *resolved_args])
+
+    captured = capsys.readouterr()
+
+    assert result == 2
+    assert message in captured.err
 
 
 def test_comment_pr_errors_when_no_token_is_available(
