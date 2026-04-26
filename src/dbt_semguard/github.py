@@ -5,6 +5,8 @@ from typing import Any, Callable
 from urllib import error, request
 
 
+from dbt_semguard.models import Report
+
 PR_COMMENT_MARKER = "<!-- dbt-semguard -->"
 
 RequestFn = Callable[[str, str, str, dict[str, Any] | None], Any]
@@ -19,6 +21,64 @@ class GitHubRequestError(ValueError):
 
 class GitHubPermissionError(GitHubRequestError):
     pass
+
+
+def create_check_run_annotations(
+    *,
+    repo: str,
+    head_sha: str,
+    token: str,
+    report: Report,
+    request: RequestFn | None = None,
+) -> None:
+    request_fn = request or _request_json
+
+    annotations = []
+    for change in report.changes:
+        if not change.source or not change.source.file:
+            continue
+
+        annotation_level = "failure" if change.severity == "breaking" else "warning"
+
+        annotation = {
+            "path": change.source.file,
+            "start_line": change.source.line,
+            "end_line": change.source.end_line or change.source.line,
+            "annotation_level": annotation_level,
+            "message": change.message,
+            "title": f"dbt-semguard: {change.severity} change",
+        }
+        annotations.append(annotation)
+
+    if not annotations:
+        return
+
+    for i in range(0, len(annotations), 50):
+        batch = annotations[i : i + 50]
+
+        conclusion = "failure" if report.blocking else "success"
+
+        payload = {
+            "name": "dbt-semguard-annotations",
+            "head_sha": head_sha,
+            "status": "completed",
+            "conclusion": conclusion,
+            "output": {
+                "title": f"dbt-semguard found {len(report.changes)} semantic changes",
+                "summary": f"Highest severity: {report.highest_severity}",
+                "annotations": batch,
+            },
+        }
+
+        try:
+            request_fn(
+                "POST",
+                f"https://api.github.com/repos/{repo}/check-runs",
+                token,
+                payload,
+            )
+        except GitHubPermissionError:
+            pass
 
 
 def upsert_pr_comment(
