@@ -1,6 +1,6 @@
 # Roadmap
 
-## Near term (v0.5.2 / v0.6.0)
+## Near term (v0.6.0?)
 
 - Implement advisory-only mode (`fail-on: none`).
 - Normalize filter expressions (ignoring whitespace and quote differences) to prevent cosmetic false positives.
