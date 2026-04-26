@@ -86,7 +86,7 @@ python -m pip install dbt-semguard
 ## Install From GitHub
 
 ```bash
-python -m pip install "git+https://github.com/yeaight7/dbt-semguard.git@v0.5.2"
+python -m pip install "git+https://github.com/yeaight7/dbt-semguard.git@v0.5.3"
 ```
 
 Use the GitHub install path when you need to pin directly to a repository tag.
@@ -263,7 +263,7 @@ Current automated coverage:
 
 ## Current Limitations
 
-Known `v0.5.2` limitations are intentionally narrow:
+Known `v0.5.3` limitations are intentionally narrow:
 
 - There is no allowlist for intentional semantic changes yet.
 - Manifest parsing expects dbt `semantic_manifest.json`, not the general-purpose dbt `manifest.json` artifact.
@@ -290,7 +290,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: yeaight7/dbt-semguard@v0.5.2
+      - uses: yeaight7/dbt-semguard@v0.5.3
         id: semguard
         with:
           base-ref: ${{ github.event.pull_request.base.sha }}
@@ -347,7 +347,7 @@ For forked pull requests, the standard `pull_request` event usually does not get
 
 Common CI and configuration issues are covered in [docs/troubleshooting.md](docs/troubleshooting.md).
 
-## Migration notes (`v0.5.2`)
+## Migration notes (`v0.5.3`)
 
 - Git ref extraction now scopes strictly to `--project-dir` for monorepos.
 - YAML discovery now uses safe default include/exclude patterns.
