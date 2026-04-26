@@ -26,7 +26,10 @@ def test_readme_explains_purpose_and_usage_flow():
 def test_readme_covers_github_install_source_install_and_action_permissions():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
+    assert "## Install From PyPI" in readme
+    assert "python -m pip install dbt-semguard" in readme
     assert "## Install From GitHub" in readme
+    assert readme.index("## Install From PyPI") < readme.index("## Install From GitHub")
     assert 'python -m pip install "git+https://github.com/yeaight7/dbt-semguard.git@v0.5.2"' in readme
     assert "Python 3.11 or newer" in readme
     assert "## Install From Source" in readme
@@ -35,7 +38,9 @@ def test_readme_covers_github_install_source_install_and_action_permissions():
     assert "contents: read" in readme
     assert "issues: write" in readme
     assert "pull-requests: read" in readme
+    assert "checks: write" in readme
     assert "forked pull requests" in readme
+    assert "Missing `checks: write`" in readme
     assert "steps.semguard.outputs.highest-severity" in readme
     assert "steps.semguard.outputs.blocking" in readme
     assert "pr-comment-mode" in readme
