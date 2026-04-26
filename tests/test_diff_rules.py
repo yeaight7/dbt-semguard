@@ -60,8 +60,7 @@ def test_diff_detects_semantic_time_and_non_additive_changes():
         metrics={
             "gross_revenue": MetricContract(
                 name="gross_revenue",
-                type="simple",
-                agg="sum",
+                metric_type="simple",                agg="sum",
                 expr="order_total",
                 agg_time_dimension="ordered_at",
                 non_additive_dimension={"name": "ordered_at", "window_choice": "min"},
@@ -76,8 +75,7 @@ def test_diff_detects_semantic_time_and_non_additive_changes():
         metrics={
             "gross_revenue": MetricContract(
                 name="gross_revenue",
-                type="simple",
-                agg="sum",
+                metric_type="simple",                agg="sum",
                 expr="order_total",
                 agg_time_dimension="booked_at",
                 non_additive_dimension={"name": "booked_at", "window_choice": "max"},
