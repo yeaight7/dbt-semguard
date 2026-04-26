@@ -6,14 +6,13 @@ on:
       - "tests/fixtures/projects/base/models/orders.yml"
       - ".github/workflows/semguard-pr-comment-test.yml"
 
-permissions:
-  contents: read
-  issues: write
-  pull-requests: write
-  checks: write
-
 jobs:
   semguard:
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+      checks: write
     runs-on: ubuntu-latest
 
     steps:
