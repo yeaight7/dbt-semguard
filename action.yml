@@ -1,8 +1,8 @@
 name: dbt-semguard
 description: Compare dbt Semantic Layer semantics and fail on breaking changes.
 branding:
-  icon: shield
-  color: blue
+  icon: alert-triangle
+  color: red
 
 inputs:
   python-version:
