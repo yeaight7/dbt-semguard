@@ -13,9 +13,10 @@ def load_yaml_documents_from_git_ref(
     root = Path(project_dir).resolve()
     repo_root = _resolve_repo_root(root)
     project_prefix = _project_prefix(repo_root, root)
+    tree_ref = _resolve_tree_ref(repo_root, git_ref)
 
     try:
-        command = ["git", "-C", str(repo_root), "ls-tree", "-r", "--name-only", git_ref]
+        command = ["git", "-C", str(repo_root), "ls-tree", "-r", "--name-only", tree_ref]
         if project_prefix:
             command.extend(["--", project_prefix])
         listing = subprocess.run(
@@ -39,7 +40,7 @@ def load_yaml_documents_from_git_ref(
             continue
         try:
             result = subprocess.run(
-                ["git", "-C", str(repo_root), "show", f"{git_ref}:{repo_relative_path}"],
+                ["git", "-C", str(repo_root), "show", f"{tree_ref}:{repo_relative_path}"],
                 check=True,
                 capture_output=True,
                 text=True,
@@ -68,6 +69,28 @@ def _resolve_repo_root(project_dir: Path) -> Path:
         stderr = exc.stderr.strip() or exc.stdout.strip() or f"Failed to locate git repository from '{project_dir}'."
         raise ValueError(stderr) from exc
     return Path(result.stdout.strip()).resolve()
+
+
+def _resolve_tree_ref(repo_root: Path, git_ref: str) -> str:
+    raw_ref = str(git_ref).strip()
+    if not raw_ref or raw_ref.startswith("-"):
+        raise ValueError(f"Invalid git ref '{git_ref}'.")
+
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", "--verify", "--quiet", "--end-of-options", f"{raw_ref}^{{tree}}"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr.strip() or exc.stdout.strip() or f"Invalid git ref '{git_ref}'."
+        raise ValueError(stderr) from exc
+
+    tree_ref = result.stdout.strip()
+    if not tree_ref:
+        raise ValueError(f"Invalid git ref '{git_ref}'.")
+    return tree_ref
 
 
 def _project_prefix(repo_root: Path, project_dir: Path) -> str:
