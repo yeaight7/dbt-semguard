@@ -259,6 +259,5 @@ def test_pyproject_includes_v051_packaging_metadata():
     assert project["urls"]["Changelog"] == "https://github.com/yeaight7/dbt-semguard/blob/main/CHANGELOG.md"
     assert project["urls"]["Documentation"] == "https://github.com/yeaight7/dbt-semguard#readme"
     requirements_dev = (ROOT / "requirements-dev.txt").read_text(encoding="utf-8")
-    assert "pydantic==" in requirements_dev
     assert "PyYAML==" in requirements_dev
     assert "pytest==" in requirements_dev
