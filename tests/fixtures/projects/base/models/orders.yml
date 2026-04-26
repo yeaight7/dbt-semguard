@@ -18,7 +18,7 @@ models:
           name: sales_rep
           type: foreign
       - name: ordered_at
-        granularity: day
+        granularity: week
         dimension:
           type: time
       - name: sales_channel
