@@ -242,10 +242,10 @@ def _diff_nested_contracts(
         item_path = f"{path}.{item_name}"
 
         if base_item is None and head_item is not None:
-            changes.append(_change(added_code, item_path, None, head_item.model_dump(mode="json"), head_item.source))
+            changes.append(_change(added_code, item_path, None, head_item.model_dump(), head_item.source))
             continue
         if base_item is not None and head_item is None:
-            changes.append(_change(removed_code, item_path, base_item.model_dump(mode="json"), None, base_item.source))
+            changes.append(_change(removed_code, item_path, base_item.model_dump(), None, base_item.source))
             continue
         assert base_item is not None and head_item is not None
 
