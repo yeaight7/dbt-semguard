@@ -253,7 +253,7 @@ def test_field_diff_policy_accounts_for_all_supported_contract_fields():
 
     for model_name, model_type in model_types.items():
         policy = FIELD_DIFF_POLICY[model_name]
-        assert set(policy) == set(model_type.model_fields)
+        assert set(policy) == set(model_type.__dataclass_fields__)
 
         for rule in policy.values():
             if isinstance(rule, str):
@@ -568,4 +568,6 @@ def _advanced_metric_manifest(*, window: str = "30d", base_metric: str = "signup
             },
         ],
         "project_configuration": {"time_spines": [], "time_spine_table_configurations": []},
+    }
+ions": []},
     }
