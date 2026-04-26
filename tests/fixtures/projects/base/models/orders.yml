@@ -17,14 +17,11 @@ models:
         granularity: day
         dimension:
           type: time
-      - name: country
-        dimension:
-          type: categorical
     metrics:
       - name: gross_revenue
         label: Gross Revenue
         type: simple
-        agg: sum
+        agg: avg
         expr: order_total
         filter: order_status = 'completed'
       - name: order_count
@@ -37,4 +34,4 @@ metrics:
     type: ratio
     label: Average order value
     numerator: gross_revenue
-    denominator: order_count
+    denominator: gross_revenue
