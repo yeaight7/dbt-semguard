@@ -33,7 +33,7 @@ def action_steps() -> list[dict]:
 def test_action_installs_from_action_path_and_has_branding():
     action = load_action()
 
-    assert action["branding"] == {"icon": "shield", "color": "blue"}
+    assert action["branding"] == {"icon": "alert-triangle", "color": "red"}
     install_step = next(step for step in action["runs"]["steps"] if step.get("name") == "Install dbt-semguard")
     assert "python -m venv" in install_step["run"]
     assert "GITHUB_PATH" in install_step["run"]
