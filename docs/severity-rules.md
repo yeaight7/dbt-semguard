@@ -60,6 +60,6 @@ Safe changes do not appear in the semantic diff.
 ## Defaults
 
 - Default threshold: `--fail-on breaking`
-- No repo-level config file in `v0.3`
-- No rename inference in `v0.3`
+- Optional repo-level include/exclude config is supported through `.semguard.yml`
+- Rename inference is intentionally conservative and treated as a removal plus an addition
 - `source` diagnostics and identity fields such as object names are intentionally excluded from semantic equality

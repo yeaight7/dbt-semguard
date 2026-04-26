@@ -28,6 +28,7 @@ def test_readme_covers_github_install_source_install_and_action_permissions():
 
     assert "## Install From GitHub" in readme
     assert 'python -m pip install "git+https://github.com/yeaight7/dbt-semguard.git@v0.5.0"' in readme
+    assert "Python 3.11 or newer" in readme
     assert "## Install From Source" in readme
     assert "python -m pip install ." in readme
     assert "## Use As A GitHub Action" in readme
@@ -54,3 +55,12 @@ def test_license_file_exists_and_is_mit():
 
     assert "MIT License" in license_text
     assert "Permission is hereby granted, free of charge" in license_text
+
+
+def test_severity_rules_defaults_do_not_claim_v03_limitations():
+    severity_rules = (ROOT / "docs" / "severity-rules.md").read_text(encoding="utf-8")
+
+    assert "No repo-level config file in `v0.3`" not in severity_rules
+    assert "No rename inference in `v0.3`" not in severity_rules
+    assert "Default threshold: `--fail-on breaking`" in severity_rules
+    assert ".semguard.yml" in severity_rules

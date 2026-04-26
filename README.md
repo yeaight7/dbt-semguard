@@ -81,6 +81,8 @@ That means the output is focused on semantic drift, not formatting drift.
 python -m pip install "git+https://github.com/yeaight7/dbt-semguard.git@v0.5.0"
 ```
 
+`dbt-semguard` requires Python 3.11 or newer.
+
 ## Install From Source
 
 ```bash
