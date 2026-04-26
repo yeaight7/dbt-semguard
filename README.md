@@ -308,23 +308,23 @@ jobs:
 
 The action now exposes structured outputs so downstream CI can branch on semantic severity without reparsing JSON:
 
-steps.semguard.outputs.highest-severity
-steps.semguard.outputs.blocking
-steps.semguard.outputs.breaking-count
-steps.semguard.outputs.risky-count
-steps.semguard.outputs.safe-count
+- `steps.semguard.outputs.highest-severity`
+- `steps.semguard.outputs.blocking`
+- `steps.semguard.outputs.breaking-count`
+- `steps.semguard.outputs.risky-count`
+- `steps.semguard.outputs.safe-count`
 
-pr-comment-mode accepts:
+`pr-comment-mode` accepts:
 
-sticky: update the previous dbt-semguard PR comment when one already exists
-create: always publish a new PR comment instead of updating the previous one
+- `sticky`: update the previous dbt-semguard PR comment when one already exists
+- `create`: always publish a new PR comment instead of updating the previous one
 
 The action writes:
 
 - a Markdown summary to the workflow summary
-- a JSON artifact named semguard-report
+- a JSON artifact named `semguard-report`
 - structured step outputs for severity and counts
-- an optional sticky PR comment when pr-comment: true
+- an optional sticky PR comment when `pr-comment: true`
 - inline check-run annotations when source diagnostics are available
 - a failing status when the configured threshold is reached
 
