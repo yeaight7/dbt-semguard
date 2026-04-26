@@ -100,8 +100,7 @@ def test_diff_detects_derived_metric_expr_changes():
         metrics={
             "revenue_delta": MetricContract(
                 name="revenue_delta",
-                type="derived",
-                expr="current_revenue - prior_revenue",
+                metric_type="derived",                expr="current_revenue - prior_revenue",
                 input_metrics=["current_revenue", "prior_revenue"],
             )
         }
@@ -110,8 +109,7 @@ def test_diff_detects_derived_metric_expr_changes():
         metrics={
             "revenue_delta": MetricContract(
                 name="revenue_delta",
-                type="derived",
-                expr="current_revenue + prior_revenue",
+                metric_type="derived",                expr="current_revenue + prior_revenue",
                 input_metrics=["current_revenue", "prior_revenue"],
             )
         }
@@ -269,10 +267,10 @@ def test_diff_detects_cumulative_metric_semantic_changes():
             "revenue_mtd": MetricContract(
                 name="revenue_mtd",
                 metric_type="cumulative",
-                input_metric="revenue_weekly",
-                window="60d",
-                grain_to_date="quarter",
-                period_agg="avg",
+                input_metric="revenue_daily",
+                window="30d",
+                grain_to_date="month",
+                period_agg="sum",
             )
         }
     )
