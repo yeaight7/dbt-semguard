@@ -3,10 +3,28 @@ from pathlib import Path
 
 import pytest
 
+import dbt_semguard.extractors as extractor_facade
 from dbt_semguard.extractors import extract_contract_from_manifest, extract_contract_from_yaml_dir
 
 
 FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def test_extractors_public_facade_exports_supported_entrypoints():
+    assert callable(extractor_facade.extract_contract_from_yaml_dir)
+    assert callable(extractor_facade.extract_contract_from_git_ref)
+    assert callable(extractor_facade.extract_contract_from_manifest)
+
+
+def test_extractor_internals_are_split_into_focused_modules():
+    import dbt_semguard.manifest_extractors as manifest_extractors
+    import dbt_semguard.normalization as normalization
+    import dbt_semguard.yaml_extractors as yaml_extractors
+
+    assert callable(yaml_extractors.extract_contract_from_yaml_dir)
+    assert callable(yaml_extractors.extract_contract_from_git_ref)
+    assert callable(manifest_extractors.extract_contract_from_manifest)
+    assert callable(normalization.normalize_filter_value)
 
 
 def test_yaml_extractor_builds_latest_spec_contract():
