@@ -43,6 +43,15 @@ At a high level:
 
 It keeps the pieces that affect meaning and ignores cosmetic metadata.
 
+## What v0.5.4 Adds
+
+`v0.5.4` is a patch hardening release with the same CLI and action inputs.
+
+- **Severity typing:** internals now use a typed severity enum while reports and GitHub outputs still serialize `breaking`, `risky`, and `safe`.
+- **Extractor structure:** YAML, manifest, and normalization internals are split behind the same public `dbt_semguard.extractors` facade.
+- **Release safety:** repository workflows now avoid global write permissions; only the PR comment smoke workflow requests comment/check scopes.
+- **Diff precision:** case-sensitive SQL filters, measure changes, sub-day grains, git ref validation, and 30-second GitHub API timeouts are all part of the documented release surface.
+
 ## What v0.5.3 Adds
 
 `v0.5.3` is a release-surface hardening release focused on making the public GitHub Action behavior match the documented interface.
