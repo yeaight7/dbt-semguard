@@ -16,26 +16,23 @@ def _strip_diagnostics(value: Any) -> Any:
     return value
 
 
-def _strip_null_sources_and_rename(value: Any) -> Any:
+def _strip_null_sources(value: Any) -> Any:
     if isinstance(value, dict):
         result: dict[str, Any] = {}
         for key, item in value.items():
             if key == "source" and item is None:
                 continue
-            if key == "metric_type":
-                result["type"] = _strip_null_sources_and_rename(item)
-            else:
-                result[key] = _strip_null_sources_and_rename(item)
+            result[key] = _strip_null_sources(item)
         return result
     if isinstance(value, list):
-        return [_strip_null_sources_and_rename(item) for item in value]
+        return [_strip_null_sources(item) for item in value]
     return value
 
 
 @dataclass
 class SemanticComparableModel:
     def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
-        return _strip_null_sources_and_rename(asdict(self))
+        return _strip_null_sources(asdict(self))
 
     def model_dump_json(self, indent: int | None = None, **kwargs: Any) -> str:
         return json.dumps(self.model_dump(), indent=indent)
