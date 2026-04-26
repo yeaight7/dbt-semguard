@@ -64,8 +64,7 @@ def test_manifest_extractor_matches_semantic_manifest_fixture():
     manifest_contract = extract_contract_from_manifest(FIXTURES / "manifest" / "base_semantic_manifest.json")
     expected = json.loads((FIXTURES / "contracts" / "base_contract.json").read_text())
 
-    assert manifest_contract.model_dump(mode="json") == expected
-
+    assert manifest_contract.model_dump() == expected
 
 def test_manifest_extractor_rejects_plain_dbt_manifest_artifact(tmp_path: Path):
     manifest_path = tmp_path / "manifest.json"
