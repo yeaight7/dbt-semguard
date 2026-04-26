@@ -13,28 +13,37 @@ models:
         entity:
           name: customer
           type: foreign
+      - name: sales_rep_id
+        entity:
+          name: sales_rep
+          type: foreign
       - name: ordered_at
-        granularity: day
+        granularity: week
         dimension:
           type: time
-      - name: country
+      - name: sales_channel
         dimension:
           type: categorical
     metrics:
       - name: gross_revenue
         label: Gross Revenue
         type: simple
-        agg: sum
+        agg: avg
         expr: order_total
-        filter: order_status = 'completed'
+        filter: order_status in ('completed', 'refunded')
       - name: order_count
         type: simple
         agg: count
         expr: 1
+      - name: refunded_orders
+        type: simple
+        agg: count
+        expr: 1
+        filter: order_status = 'refunded'
 
 metrics:
   - name: aov
     type: ratio
     label: Average order value
     numerator: gross_revenue
-    denominator: order_count
+    denominator: gross_revenue
