@@ -283,7 +283,7 @@ jobs:
     permissions:
       contents: read
       issues: write
-      pull-requests: read
+      pull-requests: write
       checks: write
     steps:
       - uses: actions/checkout@v4
@@ -336,7 +336,7 @@ If you enable `pr-comment: true`, the workflow needs:
 
 - `contents: read`
 - `issues: write`
-- `pull-requests: read`
+- `pull-requests: write`
 - `checks: write`
 
 Missing `checks: write` can prevent inline annotations and check runs from appearing even when the semantic diff succeeds.

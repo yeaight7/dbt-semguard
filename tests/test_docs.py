@@ -38,7 +38,7 @@ def test_readme_covers_github_install_source_install_and_action_permissions():
     assert "## Use As A GitHub Action" in readme
     assert "contents: read" in readme
     assert "issues: write" in readme
-    assert "pull-requests: read" in readme
+    assert "pull-requests: write" in readme
     assert "checks: write" in readme
     assert "forked pull requests" in readme
     assert "Missing `checks: write`" in readme
