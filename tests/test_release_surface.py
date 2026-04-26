@@ -272,18 +272,18 @@ def test_action_comment_pr_arguments_are_accepted_by_cli_parser(tmp_path: Path):
 def test_readme_uses_marketplace_action_ref_and_relative_links():
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
-    assert "- uses: yeaight7/dbt-semguard@v0.5.2" in readme
+    assert "- uses: yeaight7/dbt-semguard@v0.5.3" in readme
     assert "uses: ./" not in readme
     assert "C:/Users/Rivero/" not in readme
     assert "(docs/contract-spec.md)" in readme
     assert "(examples/ecommerce_dbt_project)" in readme
 
 
-def test_pyproject_includes_v052_packaging_metadata():
+def test_pyproject_includes_v053_packaging_metadata():
     pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     project = pyproject["project"]
 
-    assert project["version"] == "0.5.2"
+    assert project["version"] == "0.5.3"
     assert project["authors"] == [{"name": "yeaight7", "email": "rivero4javier@outlook.es"}]
     assert "keywords" in project
     assert {"dbt", "semantic-layer", "metrics", "github-actions"}.issubset(set(project["keywords"]))
