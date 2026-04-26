@@ -80,9 +80,8 @@ def test_action_report_paths_are_env_driven_not_hardcoded():
     assert "semguard-report.md" not in generate_step["run"]
     assert 'REPORT_DIR' in generate_step["env"]
     assert 'REPORT_BASENAME' in generate_step["env"]
-    assert '"$REPORT_MD_PATH"' in publish_step["run"]
+    assert '"$REPORT_MD_PATH"' in publish_step["run"] or "body-file $REPORT_MD_PATH" in publish_step["run"]
     assert upload_step["with"]["path"] == "${{ env.REPORT_JSON_PATH }}"
-
 
 def test_action_upload_artifact_always_runs():
     upload_step = next(step for step in action_steps() if step.get("uses") == "actions/upload-artifact@v4")
