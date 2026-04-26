@@ -1,4 +1,5 @@
 from pathlib import Path
+from dbt_semguard import __version__
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,7 +31,7 @@ def test_readme_covers_github_install_source_install_and_action_permissions():
     assert "python -m pip install dbt-semguard" in readme
     assert "## Install From GitHub" in readme
     assert readme.index("## Install From PyPI") < readme.index("## Install From GitHub")
-    assert 'python -m pip install "git+https://github.com/yeaight7/dbt-semguard.git@v0.5.3"' in readme
+    assert f'python -m pip install "git+https://github.com/yeaight7/dbt-semguard.git@v{__version__}"' in readme
     assert "Python 3.11 or newer" in readme
     assert "## Install From Source" in readme
     assert "python -m pip install ." in readme
