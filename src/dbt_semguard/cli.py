@@ -64,7 +64,7 @@ def _build_parser() -> argparse.ArgumentParser:
         compare_parser.add_argument("--base-manifest")
         compare_parser.add_argument("--head-manifest")
         compare_parser.add_argument("--format", choices=["text", "markdown", "json"], default="text")
-        compare_parser.add_argument("--fail-on", choices=["safe", "risky", "breaking"], default="breaking")
+        compare_parser.add_argument("--fail-on", choices=["safe", "risky", "breaking", "none"], default="breaking")
 
     return parser
 
@@ -101,16 +101,51 @@ def _run_compare(args: argparse.Namespace) -> int:
 
 
 def _run_comment_pr(args: argparse.Namespace) -> int:
-    body = Path(args.body_file).read_text(encoding="utf-8")
     token = _resolve_github_token(args.github_token)
     try:
-        upsert_pr_comment(
-            repo=args.repo,
-            pull_request_number=args.pr_number,
-            token=token,
-            body=body,
-            mode=args.mode,
-        )
+        if getattr(args, "pr_number", None) and getattr(args, "body_file", None):
+            body = Path(args.body_file).read_text(encoding="utf-8")
+            upsert_pr_comment(
+                repo=args.repo,
+                pull_request_number=args.pr_number,
+                token=token,
+                body=body,
+                mode=getattr(args, "mode", "sticky"),
+            )
+        if getattr(args, "head_sha", None) and getattr(args, "report_json", None):
+            import json
+            from dbt_semguard.models import ChangeRecord, Report, SourceLocation
+            
+            payload = json.loads(Path(args.report_json).read_text(encoding="utf-8"))
+            changes = []
+            for c in payload.get("changes", []):
+                source = SourceLocation(**c["source"]) if c.get("source") else None
+                changes.append(ChangeRecord(
+                    code=c["code"],
+                    severity=c["severity"],
+                    message=c["message"],
+                    path=c["path"],
+                    before=c.get("before"),
+                    after=c.get("after"),
+                    source=source
+                ))
+            
+            report = Report(
+                summary=payload.get("summary", {}),
+                highest_severity=payload.get("highest_severity", "safe"),
+                blocking=payload.get("blocking", False),
+                changes=changes,
+                metadata=payload.get("metadata", {})
+            )
+            
+            from dbt_semguard.github import create_check_run_annotations
+            create_check_run_annotations(
+                repo=args.repo,
+                head_sha=args.head_sha,
+                token=token,
+                report=report,
+            )
+            
     except GitHubPermissionError as exc:
         print(
             f"dbt-semguard: skipping PR comment because the GitHub API denied permission ({exc.status_code}).",
