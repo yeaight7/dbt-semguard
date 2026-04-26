@@ -78,7 +78,7 @@ That means the output is focused on semantic drift, not formatting drift.
 ## Install From GitHub
 
 ```bash
-python -m pip install "git+https://github.com/yeaight7/dbt-semguard.git@v0.5.1"
+python -m pip install "git+https://github.com/yeaight7/dbt-semguard.git@v0.5.2"
 ```
 
 `dbt-semguard` requires Python 3.11 or newer.
@@ -255,7 +255,7 @@ Current automated coverage:
 
 ## Current Limitations
 
-Known `v0.5.1` limitations are intentionally narrow:
+Known `v0.5.2` limitations are intentionally narrow:
 
 - There is no `fail-on: none` advisory-only mode yet.
 - There is no allowlist for intentional semantic changes yet.
@@ -283,7 +283,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: yeaight7/dbt-semguard@v0.5.1
+      - uses: yeaight7/dbt-semguard@v0.5.2
         id: semguard
         with:
           base-ref: ${{ github.event.pull_request.base.sha }}
@@ -336,7 +336,7 @@ For forked pull requests, the standard `pull_request` event usually does not get
 
 Common CI and configuration issues are covered in [docs/troubleshooting.md](docs/troubleshooting.md).
 
-## Migration notes (`v0.5.1`)
+## Migration notes (`v0.5.2`)
 
 - Git ref extraction now scopes strictly to `--project-dir` for monorepos.
 - YAML discovery now uses safe default include/exclude patterns.
