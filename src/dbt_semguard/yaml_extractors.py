@@ -7,6 +7,7 @@ from typing import Any, Callable, Iterable
 import yaml
 
 from dbt_semguard.git_utils import load_yaml_documents_from_git_ref
+from dbt_semguard.manifest_extractors import _build_metric_contract_from_semantic_manifest
 from dbt_semguard.models import (
     DimensionContract,
     EntityContract,
